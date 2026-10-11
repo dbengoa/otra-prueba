@@ -56,9 +56,12 @@ class PNOA3Plugin:
         self.action.triggered.connect(self.activate)
         self.iface.addPluginToMenu(self.MENU, self.action)
         self.iface.addToolBarIcon(self.action)
-        self.load_action = QAction("Cargar LAS/LAZ ya descargado…", self.iface.mainWindow())
+        self.load_action = QAction("Convertir LAZ a LAS y cargar archivo…", self.iface.mainWindow())
         self.load_action.triggered.connect(self.load_downloaded)
         self.iface.addPluginToMenu(self.MENU, self.load_action)
+        self.configure_action = QAction("Configurar LASzip…", self.iface.mainWindow())
+        self.configure_action.triggered.connect(lambda: self.configure_laszip(True))
+        self.iface.addPluginToMenu(self.MENU, self.configure_action)
         self.tool = QgsMapToolEmitPoint(self.iface.mapCanvas())
         self.tool.setCursor(Qt.CrossCursor)
         self.tool.canvasClicked.connect(self.clicked)
@@ -70,7 +73,7 @@ class PNOA3Plugin:
             if canvas.mapTool() is not self.tool:
                 self.previous_tool = canvas.mapTool()
             canvas.setMapTool(self.tool)
-            self.iface.messageBar().pushInfo("PNOA3", "Haz clic para localizar la tesela del CNIG.")
+            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.1.3: haz clic para descargar, convertir a LAS y cargar.")
         else:
             if self.task is not None and not sip.isdeleted(self.task):
                 self.task.cancel()
@@ -96,6 +99,8 @@ class PNOA3Plugin:
             return
         if self.searching or self.pending is not None or self.conversion_task is not None:
             self.iface.messageBar().pushWarning("PNOA3", "Hay una consulta o descarga pendiente. Comprueba la descarga en el navegador o usa Complementos → PNOA3 LiDAR → Cargar LAS/LAZ ya descargado.")
+            return
+        if not self.configure_laszip():
             return
         folder = QFileDialog.getExistingDirectory(
             self.iface.mainWindow(), "Carpeta donde el navegador guardará el LAS/LAZ",
@@ -168,6 +173,9 @@ class PNOA3Plugin:
             self.iface.messageBar().pushCritical("PNOA3", "No se pudo abrir el navegador.")
             return
         self.timer.start()
+        self.iface.messageBar().pushInfo("PNOA3", "Esperando " + tile["filename"] + " en: " +
+            "; ".join(str(directory) for directory in folders) +
+            ". Si lo guardas en otra carpeta, usa Convertir LAZ a LAS y cargar archivo.")
 
     def check_download(self):
         if self.pending is None:
@@ -179,11 +187,13 @@ class PNOA3Plugin:
             return
         filename = self.pending["tile"]["filename"]
         stem, suffix = Path(filename).stem, Path(filename).suffix
-        pattern = re.compile(re.escape(stem) + r"(?: \(\d+\))?" + re.escape(suffix) + "$", re.I)
+        # CNIG puede alternar guiones y guiones bajos en el nombre publicado.
+        normalized_stem = stem.replace("-", "_")
+        pattern = re.compile(re.escape(normalized_stem) + r"(?: \(\d+\))?" + re.escape(suffix) + "$", re.I)
         folder = self.pending["folder"]
         try:
             for path in (path for directory in self.pending.get("folders", [folder]) for path in directory.iterdir()):
-                if not path.is_file() or not pattern.fullmatch(path.name):
+                if not path.is_file() or not pattern.fullmatch(path.name.replace("-", "_")):
                     continue
                 info = path.stat()
                 fingerprint = (info.st_size, info.st_mtime_ns)
@@ -202,6 +212,25 @@ class PNOA3Plugin:
             self.stop_watch()
             self.report_load_error(error)
 
+    def configure_laszip(self, force=False):
+        settings = QSettings()
+        executable = settings.value("pnoa3_lidar/laszip_executable", "", type=str)
+        if force or not executable or not Path(executable).is_file():
+            QMessageBox.information(self.iface.mainWindow(), "Configurar conversión LAZ a LAS",
+                "Selecciona laszip64.exe de la carpeta bin de LAStools (no una DLL). "
+                "Se recordará para convertir las descargas. El LAS ocupará más espacio y se conservará el LAZ.")
+            selected, unused = QFileDialog.getOpenFileName(self.iface.mainWindow(),
+                "Seleccionar laszip64.exe", "", "LASzip (laszip64.exe laszip.exe);;Todos los archivos (*)")
+            if not selected:
+                self.iface.messageBar().pushWarning("PNOA3", "Configuración cancelada: no se iniciará la conversión automática.")
+                return None
+            if Path(selected).name.lower() not in ("laszip64.exe", "laszip.exe", "laszip64", "laszip"):
+                QMessageBox.warning(self.iface.mainWindow(), "LASzip", "Selecciona el ejecutable laszip64.exe, no una DLL ni otra herramienta.")
+                return None
+            executable = selected
+            settings.setValue("pnoa3_lidar/laszip_executable", executable)
+        return executable
+
     def prepare_cloud(self, path):
         if self.conversion_task is not None:
             self.iface.messageBar().pushWarning("PNOA3", "Hay una conversión en curso.")
@@ -211,18 +240,10 @@ class PNOA3Plugin:
             load_point_cloud(path)
             self.iface.messageBar().pushSuccess("PNOA3", "LAS cargado: " + str(path))
             return
-        settings = QSettings()
-        executable = settings.value("pnoa3_lidar/laszip_executable", "", type=str)
-        if not executable or not Path(executable).is_file():
-            QMessageBox.information(self.iface.mainWindow(), "Configurar conversión LAZ a LAS",
-                "Selecciona laszip64.exe de la carpeta bin de LAStools. "
-                "Se recordará para convertir automáticamente las siguientes descargas. "
-                "La salida LAS ocupará más espacio; se conservará el LAZ original.")
-            executable, unused = QFileDialog.getOpenFileName(self.iface.mainWindow(),
-                "Seleccionar laszip64.exe (no una DLL)", "", "LASzip (laszip64.exe laszip.exe);;Todos los archivos (*)")
-            if not executable:
-                return
-            settings.setValue("pnoa3_lidar/laszip_executable", executable)
+        executable = self.configure_laszip()
+        if not executable:
+            self.iface.messageBar().pushWarning("PNOA3", "El LAZ se conserva. Conversión pendiente: configura LASzip y usa Convertir LAZ a LAS y cargar archivo.")
+            return
         self.conversion_task = ConversionTask(path, executable, self.conversion_finished)
         QgsApplication.taskManager().addTask(self.conversion_task)
         self.iface.messageBar().pushInfo("PNOA3", "Convirtiendo LAZ a LAS: " + path.name +
@@ -275,6 +296,8 @@ class PNOA3Plugin:
         self.iface.mapCanvas().mapToolSet.disconnect(self.sync_action)
         if self.iface.mapCanvas().mapTool() is self.tool:
             self.restore_tool()
+        self.iface.removePluginMenu(self.MENU, self.configure_action)
+        self.configure_action.deleteLater()
         self.iface.removePluginMenu(self.MENU, self.load_action)
         self.load_action.deleteLater()
         self.iface.removePluginMenu(self.MENU, self.action)

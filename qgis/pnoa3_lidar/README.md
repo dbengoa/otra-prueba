@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.1.2.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.1.3.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -70,3 +70,11 @@ La conversión no cambia el sistema de coordenadas ni filtra puntos.
 Se verificaron tareas asíncronas de QGIS, cancelación, colisiones y errores
 con un ejecutable de prueba. La conversión con LASzip real y la carga PDAL
 requieren validación en Windows; no están disponibles en este entorno.
+
+## Cambios en 0.1.3
+
+Configura LASzip antes de abrir la descarga del navegador y muestra las
+carpetas vigiladas. Acepta guiones o guiones bajos en el nombre de la misma
+tesela. Añade Configurar LASzip y renombra el acceso manual como
+Convertir LAZ a LAS y cargar archivo. Cancelar la configuración muestra
+un aviso explícito. La activación identifica la versión 0.1.3.
