@@ -5,7 +5,7 @@ from pathlib import Path
 from functools import partial
 
 from qgis.PyQt import sip
-from qgis.PyQt.QtCore import Qt, QTimer, QUrl, QStandardPaths
+from qgis.PyQt.QtCore import Qt, QTimer, QUrl, QStandardPaths, QSettings
 from qgis.PyQt.QtGui import QIcon, QDesktopServices
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QInputDialog, QMessageBox
 from qgis.core import (QgsApplication, QgsTask, QgsCoordinateTransform,
@@ -14,6 +14,7 @@ from qgis.gui import QgsMapToolEmitPoint
 
 from .catalog import search_tiles
 from .download import load_point_cloud
+from .conversion import ConversionTask
 
 
 class SearchTask(QgsTask):
@@ -42,6 +43,7 @@ class PNOA3Plugin:
         self.iface, self.action, self.tool, self.previous_tool = iface, None, None, None
         self.alive, self.searching, self.task = True, False, None
         self.search_token = 0
+        self.conversion_task = None
         self.pending, self.stable = None, {}
         self.timer = QTimer(iface.mainWindow())
         self.timer.setInterval(2000)
@@ -92,7 +94,7 @@ class PNOA3Plugin:
     def clicked(self, point, button):
         if button != Qt.LeftButton:
             return
-        if self.searching or self.pending is not None:
+        if self.searching or self.pending is not None or self.conversion_task is not None:
             self.iface.messageBar().pushWarning("PNOA3", "Hay una consulta o descarga pendiente. Comprueba la descarga en el navegador o usa Complementos → PNOA3 LiDAR → Cargar LAS/LAZ ya descargado.")
             return
         folder = QFileDialog.getExistingDirectory(
@@ -144,14 +146,14 @@ class PNOA3Plugin:
         if existing.is_file() and QMessageBox.question(self.iface.mainWindow(), "PNOA3",
                 "La tesela ya está en esa carpeta. ¿Cargarla?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             try:
-                load_point_cloud(existing)
+                self.prepare_cloud(existing)
             except Exception as failure:
                 self.report_load_error(failure)
             return
         QMessageBox.information(self.iface.mainWindow(), "Descarga oficial del CNIG",
             "Tesela: " + tile["filename"] + "\n\nSe abrirá su ficha en el navegador. "
             "Pulsa Descargar y completa la autorización del CNIG si la solicita.\n\n"
-            "Guarda el LAS/LAZ en: " + str(folder) + "\nQGIS lo cargará al terminar. No hace falta descomprimir LAZ.")
+            "Guarda el LAS/LAZ en: " + str(folder) + "\nEl plugin convertirá el LAZ a LAS en esa carpeta y cargará el LAS.")
         folders = [folder]
         downloads = Path(QStandardPaths.writableLocation(QStandardPaths.DownloadLocation))
         if downloads.is_dir() and downloads.resolve() != folder.resolve():
@@ -193,13 +195,51 @@ class PNOA3Plugin:
                 self.stable[str(path)] = (fingerprint, previous[1] + 1 if previous and previous[0] == fingerprint else 0)
                 if self.stable[str(path)][1] < 3:
                     continue
-                load_point_cloud(path)
                 self.stop_watch()
-                self.iface.messageBar().pushSuccess("PNOA3", "Nube de puntos cargada: " + str(path))
+                self.prepare_cloud(path)
                 return
         except Exception as error:
             self.stop_watch()
             self.report_load_error(error)
+
+    def prepare_cloud(self, path):
+        if self.conversion_task is not None:
+            self.iface.messageBar().pushWarning("PNOA3", "Hay una conversión en curso.")
+            return
+        path = Path(path)
+        if path.suffix.lower() == ".las":
+            load_point_cloud(path)
+            self.iface.messageBar().pushSuccess("PNOA3", "LAS cargado: " + str(path))
+            return
+        settings = QSettings()
+        executable = settings.value("pnoa3_lidar/laszip_executable", "", type=str)
+        if not executable or not Path(executable).is_file():
+            QMessageBox.information(self.iface.mainWindow(), "Configurar conversión LAZ a LAS",
+                "Selecciona laszip64.exe de la carpeta bin de LAStools. "
+                "Se recordará para convertir automáticamente las siguientes descargas. "
+                "La salida LAS ocupará más espacio; se conservará el LAZ original.")
+            executable, unused = QFileDialog.getOpenFileName(self.iface.mainWindow(),
+                "Seleccionar laszip64.exe (no una DLL)", "", "LASzip (laszip64.exe laszip.exe);;Todos los archivos (*)")
+            if not executable:
+                return
+            settings.setValue("pnoa3_lidar/laszip_executable", executable)
+        self.conversion_task = ConversionTask(path, executable, self.conversion_finished)
+        QgsApplication.taskManager().addTask(self.conversion_task)
+        self.iface.messageBar().pushInfo("PNOA3", "Convirtiendo LAZ a LAS: " + path.name +
+            ". Puedes seguir la tarea en el gestor de tareas de QGIS.")
+
+    def conversion_finished(self, path, error):
+        self.conversion_task = None
+        if not self.alive:
+            return
+        if path is None:
+            self.report_load_error(error or "Falló la conversión.")
+            return
+        try:
+            load_point_cloud(path)
+            self.iface.messageBar().pushSuccess("PNOA3", "LAS creado y cargado: " + str(path))
+        except Exception as failure:
+            self.report_load_error("El LAS se ha guardado en " + str(path) + "\n" + str(failure))
 
     def report_load_error(self, error):
         message = "El archivo se conserva. No se pudo cargar la nube de puntos:\n\n" + str(error)
@@ -215,9 +255,8 @@ class PNOA3Plugin:
         if not filename:
             return
         try:
-            load_point_cloud(Path(filename))
             self.stop_watch()
-            self.iface.messageBar().pushSuccess("PNOA3", "Nube de puntos añadida al proyecto: " + filename)
+            self.prepare_cloud(Path(filename))
         except Exception as error:
             self.report_load_error(error)
 
@@ -227,6 +266,8 @@ class PNOA3Plugin:
 
     def unload(self):
         self.alive = False
+        if self.conversion_task is not None and not sip.isdeleted(self.conversion_task):
+            self.conversion_task.cancel()
         self.stop_watch()
         if self.task is not None and not sip.isdeleted(self.task):
             self.task.cancel()

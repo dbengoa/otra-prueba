@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.1.1.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.1.2.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -14,12 +14,12 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
    permite elegir; si no hay tercera cobertura, lo indica sin usar otra.
 5. Se abre la ficha oficial en el navegador. Pulsa **Descargar**, completa
    la autorización/reCAPTCHA y acepta las condiciones que muestre el CNIG.
-6. QGIS detecta el LAS/LAZ terminado y lo añade al proyecto como nube de puntos.
+6. QGIS detecta la descarga terminada, convierte LAZ a LAS y añade el LAS como nube de puntos.
    Puede necesitar tiempo adicional para generar su índice de visualización.
 
 **La descarga no es completamente automática:** el portal exige autorización
 de navegador. El complemento no la omite. La localización de tesela y la carga
-del archivo descargado sí se automatizan. No convierte LAZ a LAS: QGIS lee LAZ.
+del archivo descargado sí se automatizan. Convierte LAZ a LAS con LASzip antes de cargarlo.
 
 La espera caduca al cabo de una hora. La vigilancia continúa aunque cambies de herramienta o desmarques el botón.
 Se cancela al desactivar el complemento en el administrador. No cancela una
@@ -53,3 +53,20 @@ Vigila tanto la carpeta elegida como Descargas y mantiene la espera al desmarcar
 la herramienta. En Complementos → PNOA3 LiDAR → Cargar LAS/LAZ ya descargado
 puedes seleccionar un archivo existente. Los errores de carga se muestran
 en un cuadro de diálogo, incluyendo la ausencia del proveedor PDAL.
+
+## Conversión automática en 0.1.2
+
+Tras detectar un LAZ terminado, convierte a LAS con LASzip y carga el LAS.
+La primera vez selecciona `bin/laszip64.exe` del paquete LAStools descargado;
+la ruta queda guardada. No selecciones una DLL. La conversión funciona en
+segundo plano y puede cancelarse desde el gestor de tareas de QGIS.
+Conserva el LAZ y escribe el LAS en la misma carpeta. Si ya existe un LAS,
+crea otro nombre con `_convertido_N` sin sobrescribirlo. El LAS ocupa más
+espacio. Esta configuración requiere disponer del ejecutable de LASzip.
+Para SilviLiDAR, copia únicamente el LAS completo a una carpeta de trabajo
+separada: el plugin busca tanto LAS como LAZ e incluye archivos intermedios.
+La conversión no cambia el sistema de coordenadas ni filtra puntos.
+
+Se verificaron tareas asíncronas de QGIS, cancelación, colisiones y errores
+con un ejecutable de prueba. La conversión con LASzip real y la carga PDAL
+requieren validación en Windows; no están disponibles en este entorno.
