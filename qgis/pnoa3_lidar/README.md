@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.1.0.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.1.1.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -21,8 +21,8 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 de navegador. El complemento no la omite. La localización de tesela y la carga
 del archivo descargado sí se automatizan. No convierte LAZ a LAS: QGIS lee LAZ.
 
-La espera caduca al cabo de una hora. Puedes cancelar la vigilancia pulsando
-otra vez el botón del plugin o desactivando el complemento. No cancela una
+La espera caduca al cabo de una hora. La vigilancia continúa aunque cambies de herramienta o desmarques el botón.
+Se cancela al desactivar el complemento en el administrador. No cancela una
 descarga que ya esté haciendo el navegador. No borra archivos del usuario.
 Si la tesela ya existe, puedes cargarla directamente sin descargarla otra vez.
 
@@ -46,3 +46,10 @@ La distribución QGIS 3.40 del entorno de desarrollo no incluye PDAL. Por ello
 la apertura de un LAS/LAZ real y una descarga autorizada desde el navegador
 de un usuario siguen pendientes de validación. El instalador y el flujo GUI
 se comprueban con fixtures y una llamada de carga controlada en las pruebas.
+
+## Cambios de 0.1.1
+
+Vigila tanto la carpeta elegida como Descargas y mantiene la espera al desmarcar
+la herramienta. En Complementos → PNOA3 LiDAR → Cargar LAS/LAZ ya descargado
+puedes seleccionar un archivo existente. Los errores de carga se muestran
+en un cuadro de diálogo, incluyendo la ausencia del proveedor PDAL.

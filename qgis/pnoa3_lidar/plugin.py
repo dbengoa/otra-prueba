@@ -54,6 +54,9 @@ class PNOA3Plugin:
         self.action.triggered.connect(self.activate)
         self.iface.addPluginToMenu(self.MENU, self.action)
         self.iface.addToolBarIcon(self.action)
+        self.load_action = QAction("Cargar LAS/LAZ ya descargado…", self.iface.mainWindow())
+        self.load_action.triggered.connect(self.load_downloaded)
+        self.iface.addPluginToMenu(self.MENU, self.load_action)
         self.tool = QgsMapToolEmitPoint(self.iface.mapCanvas())
         self.tool.setCursor(Qt.CrossCursor)
         self.tool.canvasClicked.connect(self.clicked)
@@ -67,7 +70,6 @@ class PNOA3Plugin:
             canvas.setMapTool(self.tool)
             self.iface.messageBar().pushInfo("PNOA3", "Haz clic para localizar la tesela del CNIG.")
         else:
-            self.stop_watch()
             if self.task is not None and not sip.isdeleted(self.task):
                 self.task.cancel()
             self.search_token += 1
@@ -91,7 +93,7 @@ class PNOA3Plugin:
         if button != Qt.LeftButton:
             return
         if self.searching or self.pending is not None:
-            self.iface.messageBar().pushWarning("PNOA3", "Hay una consulta o descarga pendiente. Espera o desactiva el plugin para cancelarla.")
+            self.iface.messageBar().pushWarning("PNOA3", "Hay una consulta o descarga pendiente. Comprueba la descarga en el navegador o usa Complementos → PNOA3 LiDAR → Cargar LAS/LAZ ya descargado.")
             return
         folder = QFileDialog.getExistingDirectory(
             self.iface.mainWindow(), "Carpeta donde el navegador guardará el LAS/LAZ",
@@ -144,15 +146,20 @@ class PNOA3Plugin:
             try:
                 load_point_cloud(existing)
             except Exception as failure:
-                self.iface.messageBar().pushCritical("PNOA3", str(failure))
+                self.report_load_error(failure)
             return
         QMessageBox.information(self.iface.mainWindow(), "Descarga oficial del CNIG",
             "Tesela: " + tile["filename"] + "\n\nSe abrirá su ficha en el navegador. "
             "Pulsa Descargar y completa la autorización del CNIG si la solicita.\n\n"
             "Guarda el LAS/LAZ en: " + str(folder) + "\nQGIS lo cargará al terminar. No hace falta descomprimir LAZ.")
-        before = {path.name: (path.stat().st_size, path.stat().st_mtime_ns)
-                  for path in folder.iterdir() if path.is_file()}
-        self.pending = {"tile": tile, "folder": folder, "before": before, "started": time.monotonic()}
+        folders = [folder]
+        downloads = Path(QStandardPaths.writableLocation(QStandardPaths.DownloadLocation))
+        if downloads.is_dir() and downloads.resolve() != folder.resolve():
+            folders.append(downloads)
+        before = {str(path): (path.stat().st_size, path.stat().st_mtime_ns)
+                  for directory in folders for path in directory.iterdir() if path.is_file()}
+        self.pending = {"tile": tile, "folder": folder, "folders": folders,
+                        "before": before, "started": time.monotonic()}
         self.stable = {}
         if not QDesktopServices.openUrl(QUrl(tile["page_url"])):
             self.pending = None
@@ -173,18 +180,18 @@ class PNOA3Plugin:
         pattern = re.compile(re.escape(stem) + r"(?: \(\d+\))?" + re.escape(suffix) + "$", re.I)
         folder = self.pending["folder"]
         try:
-            for path in folder.iterdir():
+            for path in (path for directory in self.pending.get("folders", [folder]) for path in directory.iterdir()):
                 if not path.is_file() or not pattern.fullmatch(path.name):
                     continue
                 info = path.stat()
                 fingerprint = (info.st_size, info.st_mtime_ns)
-                if self.pending["before"].get(path.name) == fingerprint or info.st_size < 227:
+                if self.pending["before"].get(str(path)) == fingerprint or info.st_size < 227:
                     continue
-                if any((folder / (path.name + extension)).exists() for extension in (".part", ".crdownload", ".tmp")):
+                if any((path.parent / (path.name + extension)).exists() for extension in (".part", ".crdownload", ".tmp")):
                     continue
-                previous = self.stable.get(path.name)
-                self.stable[path.name] = (fingerprint, previous[1] + 1 if previous and previous[0] == fingerprint else 0)
-                if self.stable[path.name][1] < 3:
+                previous = self.stable.get(str(path))
+                self.stable[str(path)] = (fingerprint, previous[1] + 1 if previous and previous[0] == fingerprint else 0)
+                if self.stable[str(path)][1] < 3:
                     continue
                 load_point_cloud(path)
                 self.stop_watch()
@@ -192,7 +199,27 @@ class PNOA3Plugin:
                 return
         except Exception as error:
             self.stop_watch()
-            self.iface.messageBar().pushCritical("PNOA3", "El archivo se conserva. No se pudo cargar: " + str(error))
+            self.report_load_error(error)
+
+    def report_load_error(self, error):
+        message = "El archivo se conserva. No se pudo cargar la nube de puntos:\n\n" + str(error)
+        self.iface.messageBar().pushCritical("PNOA3", message)
+        QMessageBox.warning(self.iface.mainWindow(), "PNOA3: error de carga", message)
+
+    def load_downloaded(self):
+        filename, unused = QFileDialog.getOpenFileName(
+            self.iface.mainWindow(), "Cargar nube de puntos descargada",
+            str(self.pending["folder"]) if self.pending else
+            QStandardPaths.writableLocation(QStandardPaths.DownloadLocation),
+            "Nubes de puntos (*.las *.laz *.LAS *.LAZ)")
+        if not filename:
+            return
+        try:
+            load_point_cloud(Path(filename))
+            self.stop_watch()
+            self.iface.messageBar().pushSuccess("PNOA3", "Nube de puntos añadida al proyecto: " + filename)
+        except Exception as error:
+            self.report_load_error(error)
 
     def stop_watch(self):
         self.timer.stop()
@@ -207,6 +234,8 @@ class PNOA3Plugin:
         self.iface.mapCanvas().mapToolSet.disconnect(self.sync_action)
         if self.iface.mapCanvas().mapTool() is self.tool:
             self.restore_tool()
+        self.iface.removePluginMenu(self.MENU, self.load_action)
+        self.load_action.deleteLater()
         self.iface.removePluginMenu(self.MENU, self.action)
         self.iface.removeToolBarIcon(self.action)
         self.action.deleteLater()
