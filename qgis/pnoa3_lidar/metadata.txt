@@ -1,0 +1,13 @@
+[general]
+name=PNOA3 LiDAR
+description=Localiza teselas de tercera cobertura LiDAR en CNIG y carga la descarga en QGIS.
+about=Clic en mapa, búsqueda oficial de LIDA3, ficha en navegador para autorización CNIG y detección/carga del LAS o LAZ descargado. La descarga requiere pulsar Descargar en el portal oficial.
+version=0.1.0
+qgisMinimumVersion=3.22
+qgisMaximumVersion=3.99
+author=PNOA3 LiDAR contributors
+category=Raster
+icon=icon.svg
+experimental=True
+deprecated=False
+hasProcessingProvider=False
