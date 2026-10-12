@@ -29,19 +29,39 @@ def parse_tiles(html):
 def search_tiles(lon, lat):
     if not (-180 <= lon <= 180 and -90 <= lat <= 90):
         raise ValueError("Coordenadas geográficas inválidas.")
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; PNOA3-QGIS/0.1.0)",
+    return search_geometry({"type": "Point", "coordinates": [lon, lat]})
+
+
+def search_geometry(geometry, canceled=lambda: False):
+    if geometry.get("type") not in ("Point", "Polygon"):
+        raise ValueError("Solo se admiten puntos o polígonos.")
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; PNOA3-QGIS/0.2.0)",
                "Accept": "text/html", "Referer": BASE + "lidar-tercera-cobertura"}
     opener = build_opener(HTTPCookieProcessor(CookieJar()))
     with opener.open(Request(BASE + "lidar-tercera-cobertura", headers=headers), timeout=40) as response:
         response.read(2_000_000)
-    geometry = {"type": "FeatureCollection", "features": [{"type": "Feature",
-                "geometry": {"type": "Point", "coordinates": [lon, lat]}}]}
-    fields = {"codAgr": "MOMDT", "codSerie": "LIDA3", "numPagina": "1",
-              "coordenadas": json.dumps(geometry)}
+    feature = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
     headers["X-Requested-With"] = "XMLHttpRequest"
-    request = Request(BASE + "archivosSerie", data=urlencode(fields).encode(), headers=headers)
-    with opener.open(request, timeout=40) as response:
-        data = response.read(2_000_001)
-    if len(data) > 2_000_000:
-        raise RuntimeError("La respuesta del catálogo supera el tamaño esperado.")
-    return parse_tiles(data.decode("utf-8"))
+    found = {}
+    for page in range(1, 10001):
+        if canceled():
+            return []
+        fields = {"codAgr": "MOMDT", "codSerie": "LIDA3", "numPagina": str(page),
+                  "coordenadas": json.dumps(feature)}
+        request = Request(BASE + "archivosSerie", data=urlencode(fields).encode(), headers=headers)
+        with opener.open(request, timeout=40) as response:
+            data = response.read(2_000_001)
+        if len(data) > 2_000_000:
+            raise RuntimeError("La respuesta del catálogo supera el tamaño esperado.")
+        html = data.decode("utf-8")
+        tiles = parse_tiles(html)
+        total = re.search(r'id=["\']totalArchivos["\'][^>]*value=["\'](\d+)', html)
+        if total is None:
+            raise RuntimeError("No se pudo leer el número total de teselas del CNIG.")
+        previous = len(found)
+        found.update((tile["id"], tile) for tile in tiles)
+        if len(found) >= int(total.group(1)):
+            return list(found.values())
+        if len(found) == previous:
+            raise RuntimeError("No se pudieron recuperar todas las páginas del catálogo CNIG.")
+    raise RuntimeError("La selección supera el límite de consulta del catálogo.")

@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.1.3.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.2.0.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -78,3 +78,36 @@ carpetas vigiladas. Acepta guiones o guiones bajos en el nombre de la misma
 tesela. Añade Configurar LASzip y renombra el acceso manual como
 Convertir LAZ a LAS y cargar archivo. Cancelar la configuración muestra
 un aviso explícito. La activación identifica la versión 0.1.3.
+
+## Selección por polígono — 0.2.0
+
+1. En Complementos → PNOA3 LiDAR, elige **Dibujar polígono y descargar teselas**.
+2. Añade vértices con clic izquierdo. Termina con clic derecho tras al menos
+   tres vértices. Escape borra el dibujo. Evita polígonos que se cruzan.
+3. Configura `laszip64.exe` si aún no está guardado. Escribe el nombre de una
+   carpeta nueva, sin espacios, dentro de `C:\`, por ejemplo `PNOA_Zona1`.
+   La función de crear carpetas en C está disponible en Windows. Si Windows
+   deniega escritura, se informa del error; no se elevan permisos ni se reutiliza
+   una carpeta existente.
+4. Se consultan todas las páginas del catálogo oficial LIDA3. Se incluyen las
+   teselas completas que intersectan el polígono, no solo las totalmente dentro.
+   No recorta la nube por el polígono y no usa otras coberturas como alternativa.
+5. La ventana muestra todas las teselas. Selecciona una y pulsa **Abrir ficha
+   CNIG**. Descarga el LAZ/LAS desde esa ficha y guárdalo en la carpeta creada.
+   Repite con las demás teselas. El CNIG puede pedir condiciones y reCAPTCHA;
+   no se automatiza ni se omite esa autorización. No es una descarga masiva
+   completamente desatendida.
+6. Mantén la ventana de cola abierta. Detecta archivos terminados, convierte
+   los LAZ a LAS secuencialmente en esa misma carpeta y carga cada LAS al
+   proyecto. Los estados de la tabla indican conversión, carga o error. Cerrar
+   la ventana cancela la cola y la conversión activa; el navegador puede seguir
+   descargando. Las teselas terminadas y los LAZ originales se conservan.
+
+La selección debe tener cobertura publicada. Una carpeta sin resultados queda
+vacía si no hay teselas o falla la consulta. Para SilviLiDAR usa otra carpeta
+con solo los LAS completos: esta carpeta conserva también los LAZ.
+
+Se comprobó una consulta real por polígono al CNIG (dos teselas), paginación
+con respuestas de prueba y la cola asíncrona de dos archivos en QGIS real con
+un ejecutable conversor de prueba. La creación bajo C, LASzip real, autorización
+en navegador y lectura final PDAL requieren validación en Windows.

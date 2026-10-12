@@ -1,5 +1,7 @@
 """Clic, consulta de tesela, descarga oficial en navegador y carga automática."""
 import re
+import os
+import json
 import time
 from pathlib import Path
 from functools import partial
@@ -15,6 +17,8 @@ from qgis.gui import QgsMapToolEmitPoint
 from .catalog import search_tiles
 from .download import load_point_cloud
 from .conversion import ConversionTask
+from .polygon import PolygonTool
+from .batch import create_directory, PolygonSearch, BatchDialog
 
 
 class SearchTask(QgsTask):
@@ -44,6 +48,8 @@ class PNOA3Plugin:
         self.alive, self.searching, self.task = True, False, None
         self.search_token = 0
         self.conversion_task = None
+        self.polygon_task = None
+        self.batch_dialog = None
         self.pending, self.stable = None, {}
         self.timer = QTimer(iface.mainWindow())
         self.timer.setInterval(2000)
@@ -62,10 +68,66 @@ class PNOA3Plugin:
         self.configure_action = QAction("Configurar LASzip…", self.iface.mainWindow())
         self.configure_action.triggered.connect(lambda: self.configure_laszip(True))
         self.iface.addPluginToMenu(self.MENU, self.configure_action)
+        self.polygon_tool = PolygonTool(self.iface.mapCanvas())
+        self.polygon_tool.completed.connect(self.polygon_completed)
+        self.polygon_action = QAction("Dibujar polígono y descargar teselas…", self.iface.mainWindow())
+        self.polygon_action.triggered.connect(self.activate_polygon)
+        self.iface.addPluginToMenu(self.MENU, self.polygon_action)
+        self.iface.addToolBarIcon(self.polygon_action)
         self.tool = QgsMapToolEmitPoint(self.iface.mapCanvas())
         self.tool.setCursor(Qt.CrossCursor)
         self.tool.canvasClicked.connect(self.clicked)
         self.iface.mapCanvas().mapToolSet.connect(self.sync_action)
+
+    def activate_polygon(self):
+        if self.searching or self.pending is not None or self.conversion_task is not None or self.polygon_task is not None:
+            self.iface.messageBar().pushWarning("PNOA3", "Espera a que termine la operación actual.")
+            return
+        if self.batch_dialog is not None and self.batch_dialog.alive:
+            self.batch_dialog.show()
+            self.batch_dialog.raise_()
+            return
+        self.iface.mapCanvas().setMapTool(self.polygon_tool)
+        self.iface.messageBar().pushInfo("PNOA3", "Clic izquierdo: vértices. Clic derecho: terminar (mínimo 3). Escape: borrar dibujo.")
+
+    def polygon_completed(self, geometry):
+        if os.name != "nt":
+            QMessageBox.warning(self.iface.mainWindow(), "PNOA3", "La creación de carpetas en C:\\ está disponible en Windows.")
+            return
+        executable = self.configure_laszip()
+        if not executable:
+            return
+        name, ok = QInputDialog.getText(self.iface.mainWindow(), "Carpeta de las teselas",
+            "Nombre de una carpeta NUEVA dentro de C:\\ (sin espacios para SilviLiDAR):")
+        if not ok:
+            return
+        if any(char.isspace() for char in name):
+            QMessageBox.warning(self.iface.mainWindow(), "PNOA3", "Usa un nombre sin espacios, por ejemplo PNOA_Zona1.")
+            return
+        try:
+            geometry = geometry.clone() if hasattr(geometry, "clone") else type(geometry)(geometry)
+            geometry.transform(QgsCoordinateTransform(self.iface.mapCanvas().mapSettings().destinationCrs(),
+                QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance()))
+            folder = create_directory(name)
+            self.polygon_task = PolygonSearch(json.loads(geometry.asJson()),
+                lambda tiles, error: self.polygon_found(tiles, error, folder, executable))
+            QgsApplication.taskManager().addTask(self.polygon_task)
+            self.iface.mapCanvas().unsetMapTool(self.polygon_tool)
+            self.iface.messageBar().pushInfo("PNOA3", "Carpeta creada: " + str(folder) + ". Buscando todas las teselas que intersectan el polígono…")
+        except Exception as error:
+            QMessageBox.warning(self.iface.mainWindow(), "PNOA3", "No se pudo preparar la selección: " + str(error))
+
+    def polygon_found(self, tiles, error, folder, executable):
+        self.polygon_task = None
+        if not self.alive:
+            return
+        if tiles is None:
+            self.report_load_error(error or "Falló la búsqueda del polígono.")
+        elif not tiles:
+            QMessageBox.information(self.iface.mainWindow(), "PNOA3", "No hay teselas de tercera cobertura en el polígono. La carpeta creada queda vacía.")
+        else:
+            self.batch_dialog = BatchDialog(self.iface, tiles, folder, executable)
+            self.batch_dialog.show()
 
     def activate(self, checked):
         canvas = self.iface.mapCanvas()
@@ -73,7 +135,7 @@ class PNOA3Plugin:
             if canvas.mapTool() is not self.tool:
                 self.previous_tool = canvas.mapTool()
             canvas.setMapTool(self.tool)
-            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.1.3: haz clic para descargar, convertir a LAS y cargar.")
+            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.2.0: haz clic para descargar, convertir a LAS y cargar.")
         else:
             if self.task is not None and not sip.isdeleted(self.task):
                 self.task.cancel()
@@ -97,7 +159,7 @@ class PNOA3Plugin:
     def clicked(self, point, button):
         if button != Qt.LeftButton:
             return
-        if self.searching or self.pending is not None or self.conversion_task is not None:
+        if self.searching or self.pending is not None or self.conversion_task is not None or self.polygon_task is not None or (self.batch_dialog is not None and self.batch_dialog.alive):
             self.iface.messageBar().pushWarning("PNOA3", "Hay una consulta o descarga pendiente. Comprueba la descarga en el navegador o usa Complementos → PNOA3 LiDAR → Cargar LAS/LAZ ya descargado.")
             return
         if not self.configure_laszip():
@@ -287,6 +349,19 @@ class PNOA3Plugin:
 
     def unload(self):
         self.alive = False
+        if self.polygon_task is not None and not sip.isdeleted(self.polygon_task):
+            self.polygon_task.cancel()
+        if self.batch_dialog is not None:
+            self.batch_dialog.close()
+        if self.iface.mapCanvas().mapTool() is self.polygon_tool:
+            self.iface.mapCanvas().unsetMapTool(self.polygon_tool)
+        self.polygon_tool.clear()
+        self.iface.mapCanvas().scene().removeItem(self.polygon_tool.band)
+        sip.delete(self.polygon_tool.band)
+        self.polygon_tool.deleteLater()
+        self.iface.removePluginMenu(self.MENU, self.polygon_action)
+        self.iface.removeToolBarIcon(self.polygon_action)
+        self.polygon_action.deleteLater()
         if self.conversion_task is not None and not sip.isdeleted(self.conversion_task):
             self.conversion_task.cancel()
         self.stop_watch()
