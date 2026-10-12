@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.2.0.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.2.1.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -111,3 +111,16 @@ Se comprobó una consulta real por polígono al CNIG (dos teselas), paginación
 con respuestas de prueba y la cola asíncrona de dos archivos en QGIS real con
 un ejecutable conversor de prueba. La creación bajo C, LASzip real, autorización
 en navegador y lectura final PDAL requieren validación en Windows.
+
+## Diagnóstico y recuperación — 0.2.1
+
+La cola muestra cuántos archivos reconoce en la carpeta y añade Comprobar
+ahora los archivos descargados. Normaliza guiones y guiones bajos en los
+nombres y conserva la espera para archivos temporales e inestables.
+En Complementos → PNOA3 LiDAR → Convertir todos los LAZ de una carpeta
+puedes procesar una carpeta existente sin dibujar o descargar de nuevo.
+Selecciona LASzip si lo pide. Mantén la cola abierta. No espera a que se hayan
+descargado todas las teselas antes de convertir las que ya estén completas.
+Se comprobó el temporizador real de Qt y los nombres con separadores mixtos
+con un conversor de prueba; la causa concreta del fallo reportado en Windows
+no se ha reproducido en el entorno de desarrollo.

@@ -11,6 +11,15 @@ from .conversion import ConversionTask
 from .download import load_point_cloud
 
 
+def matches_tile(filename, tile_filename):
+    candidate = Path(filename)
+    if candidate.suffix.lower() not in ('.las', '.laz'):
+        return False
+    stem = re.sub(r' \(\d+\)$', '', candidate.stem)
+    normalize = lambda value: re.sub(r'[-_]+', '_', value).casefold()
+    return normalize(stem) == normalize(Path(tile_filename).stem)
+
+
 def create_directory(name, root=Path('C:/')):
     name = name.strip()
     if (not name or name in ('.', '..') or len(name) > 100 or
@@ -45,7 +54,7 @@ class BatchDialog(QDialog):
         self.iface, self.tiles, self.folder, self.executable = iface, tiles, Path(folder), executable
         self.alive, self.task, self.stable = True, None, {}
         self.states = ['Esperando LAZ/LAS'] * len(tiles)
-        self.setWindowTitle('PNOA3 0.2.0 — descarga y conversión por polígono')
+        self.setWindowTitle('PNOA3 0.2.1 — descarga y conversión por polígono')
         self.resize(850, 450)
         layout = QVBoxLayout(self)
         label = QLabel('Carpeta: ' + str(folder) + '\nAbre cada ficha y descarga en esta carpeta. '
@@ -64,6 +73,12 @@ class BatchDialog(QDialog):
         button = QPushButton('Abrir ficha CNIG de la tesela seleccionada (o siguiente pendiente)')
         button.clicked.connect(self.open_tile)
         layout.addWidget(button)
+        self.diagnostic = QLabel('Vigilancia activa: esperando archivos en ' + str(folder))
+        self.diagnostic.setWordWrap(True)
+        layout.addWidget(self.diagnostic)
+        rescan = QPushButton('Comprobar ahora los archivos descargados')
+        rescan.clicked.connect(self.check)
+        layout.addWidget(rescan)
         self.timer = QTimer(self)
         self.timer.setInterval(2000)
         self.timer.timeout.connect(self.check)
@@ -78,7 +93,7 @@ class BatchDialog(QDialog):
         row = self.table.currentRow()
         if row < 0:
             row = next((i for i, state in enumerate(self.states) if state == 'Esperando LAZ/LAS'), -1)
-        if row >= 0:
+        if row >= 0 and self.tiles[row].get('page_url'):
             if not QDesktopServices.openUrl(QUrl(self.tiles[row]['page_url'])):
                 self.iface.messageBar().pushCritical('PNOA3', 'No se pudo abrir la ficha CNIG.')
             self.table.clearSelection()
@@ -87,15 +102,21 @@ class BatchDialog(QDialog):
     def check(self):
         if self.task is not None or not self.alive:
             return
+        try:
+            files = [path for path in self.folder.iterdir() if path.is_file()]
+            matching = sum(any(matches_tile(path.name, tile['filename']) for tile in self.tiles) for path in files)
+            self.diagnostic.setText('Comprobando ' + str(self.folder) + ': ' + str(matching) +
+                ' archivos LAS/LAZ reconocidos. Espera de estabilidad: unos 6 segundos.')
+        except OSError as error:
+            self.diagnostic.setText('No se puede leer la carpeta: ' + str(error))
+            return
         for row, tile in enumerate(self.tiles):
             if self.states[row] != 'Esperando LAZ/LAS':
                 continue
-            stem = Path(tile['filename']).stem.replace('-', '_')
-            pattern = re.compile(re.escape(stem) + r'(?: \(\d+\))?\.(las|laz)$', re.I)
             try:
                 candidates = sorted(self.folder.iterdir(), key=lambda p: p.suffix.lower() != '.las')
                 for path in candidates:
-                    if not path.is_file() or not pattern.fullmatch(path.name.replace('-', '_')):
+                    if not path.is_file() or not matches_tile(path.name, tile['filename']):
                         continue
                     info = path.stat()
                     if info.st_size < 227 or any(Path(str(path)+ext).exists() for ext in ('.part','.crdownload','.tmp')):

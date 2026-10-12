@@ -68,6 +68,9 @@ class PNOA3Plugin:
         self.configure_action = QAction("Configurar LASzip…", self.iface.mainWindow())
         self.configure_action.triggered.connect(lambda: self.configure_laszip(True))
         self.iface.addPluginToMenu(self.MENU, self.configure_action)
+        self.resume_action = QAction("Convertir todos los LAZ de una carpeta…", self.iface.mainWindow())
+        self.resume_action.triggered.connect(self.resume_batch)
+        self.iface.addPluginToMenu(self.MENU, self.resume_action)
         self.polygon_tool = PolygonTool(self.iface.mapCanvas())
         self.polygon_tool.completed.connect(self.polygon_completed)
         self.polygon_action = QAction("Dibujar polígono y descargar teselas…", self.iface.mainWindow())
@@ -117,6 +120,26 @@ class PNOA3Plugin:
         except Exception as error:
             QMessageBox.warning(self.iface.mainWindow(), "PNOA3", "No se pudo preparar la selección: " + str(error))
 
+    def resume_batch(self):
+        if self.batch_dialog is not None and self.batch_dialog.alive:
+            self.batch_dialog.show()
+            self.batch_dialog.raise_()
+            return
+        executable = self.configure_laszip()
+        if not executable:
+            return
+        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(),
+            "Carpeta con LAZ ya descargados", "C:/")
+        if not folder:
+            return
+        paths = [path for path in Path(folder).iterdir() if path.is_file() and path.suffix.lower() == ".laz"]
+        if not paths:
+            QMessageBox.information(self.iface.mainWindow(), "PNOA3", "No hay archivos LAZ en esa carpeta.")
+            return
+        tiles = [{"filename": path.name, "page_url": ""} for path in paths]
+        self.batch_dialog = BatchDialog(self.iface, tiles, Path(folder), executable)
+        self.batch_dialog.show()
+
     def polygon_found(self, tiles, error, folder, executable):
         self.polygon_task = None
         if not self.alive:
@@ -135,7 +158,7 @@ class PNOA3Plugin:
             if canvas.mapTool() is not self.tool:
                 self.previous_tool = canvas.mapTool()
             canvas.setMapTool(self.tool)
-            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.2.0: haz clic para descargar, convertir a LAS y cargar.")
+            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.2.1: haz clic para descargar, convertir a LAS y cargar.")
         else:
             if self.task is not None and not sip.isdeleted(self.task):
                 self.task.cancel()
@@ -359,6 +382,8 @@ class PNOA3Plugin:
         self.iface.mapCanvas().scene().removeItem(self.polygon_tool.band)
         sip.delete(self.polygon_tool.band)
         self.polygon_tool.deleteLater()
+        self.iface.removePluginMenu(self.MENU, self.resume_action)
+        self.resume_action.deleteLater()
         self.iface.removePluginMenu(self.MENU, self.polygon_action)
         self.iface.removeToolBarIcon(self.polygon_action)
         self.polygon_action.deleteLater()
