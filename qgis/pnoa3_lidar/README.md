@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.2.1.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.2.2.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -124,3 +124,12 @@ descargado todas las teselas antes de convertir las que ya estén completas.
 Se comprobó el temporizador real de Qt y los nombres con separadores mixtos
 con un conversor de prueba; la causa concreta del fallo reportado en Windows
 no se ha reproducido en el entorno de desarrollo.
+
+## Corrección de cierre — 0.2.2
+
+La X y Escape cierran correctamente la ventana de cola. Al cerrarla se detiene
+la vigilancia y se cancela la conversión activa, conservando los archivos
+completos. Se elimina la llamada circular entre reject() y close().
+Se renombra el callback de teselas para no sobrescribir QDialog.done().
+Verificado con Qt real: X, Escape y reject(), con cola pendiente, terminada
+y conversión activa (nueve casos).

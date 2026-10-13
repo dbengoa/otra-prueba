@@ -54,7 +54,7 @@ class BatchDialog(QDialog):
         self.iface, self.tiles, self.folder, self.executable = iface, tiles, Path(folder), executable
         self.alive, self.task, self.stable = True, None, {}
         self.states = ['Esperando LAZ/LAS'] * len(tiles)
-        self.setWindowTitle('PNOA3 0.2.1 — descarga y conversión por polígono')
+        self.setWindowTitle('PNOA3 0.2.2 — descarga y conversión por polígono')
         self.resize(850, 450)
         layout = QVBoxLayout(self)
         label = QLabel('Carpeta: ' + str(folder) + '\nAbre cada ficha y descarga en esta carpeta. '
@@ -128,17 +128,17 @@ class BatchDialog(QDialog):
                     if count < 3:
                         continue
                     if path.suffix.lower() == '.las':
-                        self.done(row, path, None)
+                        self.tile_done(row, path, None)
                     else:
                         self.state(row, 'Convirtiendo a LAS…')
                         self.task = ConversionTask(path, self.executable,
-                            lambda output, error, index=row: self.done(index, output, error))
+                            lambda output, error, index=row: self.tile_done(index, output, error))
                         QgsApplication.taskManager().addTask(self.task)
                     return
             except Exception as error:
                 self.state(row, 'Error: ' + str(error))
 
-    def done(self, row, path, error):
+    def tile_done(self, row, path, error):
         self.task = None
         if not self.alive:
             return
@@ -155,11 +155,17 @@ class BatchDialog(QDialog):
             self.iface.messageBar().pushInfo('PNOA3', 'Cola terminada. Revisa los estados de las teselas en la ventana.')
 
     def reject(self):
-        self.close()
+        self.stop_queue()
+        super().reject()
 
-    def closeEvent(self, event):
+    def stop_queue(self):
+        if not self.alive:
+            return
         self.alive = False
         self.timer.stop()
         if self.task is not None and not sip.isdeleted(self.task):
             self.task.cancel()
+
+    def closeEvent(self, event):
+        self.stop_queue()
         super().closeEvent(event)
