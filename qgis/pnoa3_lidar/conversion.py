@@ -19,10 +19,11 @@ class ConversionTask(QgsTask):
     def __init__(self, source, executable, callback):
         super().__init__('PNOA3: convertir LAZ a LAS', QgsTask.CanCancel)
         self.source = Path(source)
-        target = self.source.with_suffix('.las')
+        output_folder = self.source.parent / 'LAS'
+        target = output_folder / self.source.with_suffix('.las').name
         number = 1
         while target.exists():
-            target = self.source.with_name(self.source.stem + '_convertido_' + str(number) + '.las')
+            target = output_folder / (self.source.stem + '_convertido_' + str(number) + '.las')
             number += 1
         self.target, self.executable, self.callback = target, executable, callback
         self.error, self.process = None, None
@@ -33,7 +34,8 @@ class ConversionTask(QgsTask):
             with self.source.open('rb') as stream:
                 if stream.read(4) != b'LASF':
                     raise RuntimeError('La entrada no es un archivo LAS/LAZ válido.')
-            handle, name = tempfile.mkstemp(prefix='.pnoa3_', suffix='.las', dir=str(self.source.parent))
+            self.target.parent.mkdir(exist_ok=True)
+            handle, name = tempfile.mkstemp(prefix='.pnoa3_', suffix='.las', dir=str(self.target.parent))
             os.close(handle)
             self.temporary = Path(name)
             with tempfile.TemporaryFile() as log:

@@ -54,11 +54,11 @@ class BatchDialog(QDialog):
         self.iface, self.tiles, self.folder, self.executable = iface, tiles, Path(folder), executable
         self.alive, self.task, self.stable = True, None, {}
         self.states = ['Esperando LAZ/LAS'] * len(tiles)
-        self.setWindowTitle('PNOA3 0.2.2 — descarga y conversión por polígono')
+        self.setWindowTitle('PNOA3 0.2.3 — descarga y conversión por polígono')
         self.resize(850, 450)
         layout = QVBoxLayout(self)
         label = QLabel('Carpeta: ' + str(folder) + '\nAbre cada ficha y descarga en esta carpeta. '
-                       'El CNIG puede pedir autorización.\nSe conservan los LAZ y se convierten a LAS uno a uno. '
+                       'El CNIG puede pedir autorización.\nSe conservan los LAZ y los LAS convertidos se guardan en la subcarpeta LAS. '
                        'Mantén esta ventana abierta; cerrarla cancela la cola.')
         label.setWordWrap(True)
         layout.addWidget(label)

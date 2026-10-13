@@ -158,7 +158,7 @@ class PNOA3Plugin:
             if canvas.mapTool() is not self.tool:
                 self.previous_tool = canvas.mapTool()
             canvas.setMapTool(self.tool)
-            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.2.2: haz clic para descargar, convertir a LAS y cargar.")
+            self.iface.messageBar().pushInfo("PNOA3", "PNOA3 0.2.3: haz clic para descargar, convertir a LAS y cargar.")
         else:
             if self.task is not None and not sip.isdeleted(self.task):
                 self.task.cancel()

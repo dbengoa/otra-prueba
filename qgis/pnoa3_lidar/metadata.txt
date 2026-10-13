@@ -2,7 +2,7 @@
 name=PNOA3 LiDAR
 description=Descarga PNOA3 por punto o polígono, convierte LAZ a LAS y carga las teselas en QGIS.
 about=Clic en mapa, búsqueda oficial de LIDA3, ficha en navegador para autorización CNIG y detección/carga del LAS o LAZ descargado. La descarga requiere pulsar Descargar en el portal oficial.
-version=0.2.2
+version=0.2.3
 qgisMinimumVersion=3.22
 qgisMaximumVersion=3.99
 author=PNOA3 LiDAR contributors

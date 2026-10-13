@@ -5,7 +5,7 @@ Plugin independiente de NDVI Sentinel. Busca únicamente la serie oficial
 
 ## Instalación y uso
 
-1. Instala `pnoa3_lidar_v0.2.2.zip` desde el administrador de complementos,
+1. Instala `pnoa3_lidar_v0.2.3.zip` desde el administrador de complementos,
    opción **Instalar a partir de ZIP**.
 2. Pulsa el botón **Descargar PNOA3 en un punto** y haz clic en el mapa.
 3. Elige la carpeta donde tu navegador va a guardar el archivo. Normalmente
@@ -60,7 +60,7 @@ Tras detectar un LAZ terminado, convierte a LAS con LASzip y carga el LAS.
 La primera vez selecciona `bin/laszip64.exe` del paquete LAStools descargado;
 la ruta queda guardada. No selecciones una DLL. La conversión funciona en
 segundo plano y puede cancelarse desde el gestor de tareas de QGIS.
-Conserva el LAZ y escribe el LAS en la misma carpeta. Si ya existe un LAS,
+Conserva el LAZ y escribe el LAS en la subcarpeta `LAS`. Si ya existe un LAS,
 crea otro nombre con `_convertido_N` sin sobrescribirlo. El LAS ocupa más
 espacio. Esta configuración requiere disponer del ejecutable de LASzip.
 Para SilviLiDAR, copia únicamente el LAS completo a una carpeta de trabajo
@@ -98,7 +98,7 @@ un aviso explícito. La activación identifica la versión 0.1.3.
    no se automatiza ni se omite esa autorización. No es una descarga masiva
    completamente desatendida.
 6. Mantén la ventana de cola abierta. Detecta archivos terminados, convierte
-   los LAZ a LAS secuencialmente en esa misma carpeta y carga cada LAS al
+   los LAZ a LAS secuencialmente en la subcarpeta `LAS` y carga cada LAS al
    proyecto. Los estados de la tabla indican conversión, carga o error. Cerrar
    la ventana cancela la cola y la conversión activa; el navegador puede seguir
    descargando. Las teselas terminadas y los LAZ originales se conservan.
@@ -133,3 +133,10 @@ completos. Se elimina la llamada circular entre reject() y close().
 Se renombra el callback de teselas para no sobrescribir QDialog.done().
 Verificado con Qt real: X, Escape y reject(), con cola pendiente, terminada
 y conversión activa (nueve casos).
+
+## Salida en subcarpeta LAS — 0.2.3
+
+Todas las conversiones guardan su resultado en una subcarpeta `LAS` junto
+al archivo original. Se crea automáticamente y QGIS carga el resultado desde
+ella. Los archivos originales se conservan. Si el nombre ya existe, se usa
+`_convertido_N` sin sobrescribirlo.
