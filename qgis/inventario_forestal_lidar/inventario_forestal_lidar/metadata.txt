@@ -1,0 +1,14 @@
+[general]
+name=Inventario forestal LiDAR
+description=PNOA tercera cobertura y métricas por parcela con FUSION para Windows
+version=0.1.0
+qgisMinimumVersion=3.34
+author=dbengoa
+email=
+about=Experimental. Índice CNIG explícito y autorización oficial; sin modelización estadística.
+category=Analysis
+experimental=True
+hasProcessingProvider=False
+repository=https://github.com/dbengoa/otra-prueba
+tracker=https://github.com/dbengoa/otra-prueba/issues
+homepage=https://github.com/dbengoa/otra-prueba
