@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import time
+import threading
 import uuid
 from .core import (Cancelled, AuthorizationRequired, DETAIL, VERSION, token,
                    validate, read_index, select_tiles, las_header, digest, commands, atomic_json)
@@ -28,12 +29,22 @@ class OfficialRedirect(__import__('urllib.request', fromlist=['HTTPRedirectHandl
 
 
 class Engine:
-    def __init__(self, config, plots, cancelled=lambda:False, progress=lambda n,s:None):
+    def __init__(self, config, plots, cancelled=lambda:False, progress=lambda n,s:None,retry_authorization=None):
         self.c = config
         self.plots = plots
         self.cancelled = cancelled
-        self.progress = progress
+        self._progress = progress
+        self._last_progress = 0
+        self.progress = self.report_progress
+        self.retry_authorization = retry_authorization or threading.Event()
         self.state = {'version':VERSION, 'status':'running', 'plots':[], 'tiles':[]}
+
+    def report_progress(self,n,text):
+        n=max(self._last_progress,min(100,float(n)))
+        self._last_progress=n
+        self._progress(n,text)
+        if hasattr(self,'logfile'):
+            self.log('PROGRESO '+format(n,'.1f')+' '+text)
 
     def check(self):
         if self.cancelled():
@@ -155,19 +166,28 @@ class Engine:
         for name in ('LDA2LAS','GridSurfaceCreate','ClipData','CloudMetrics','DTM2ASCII'):
             if not (fusion/(name+'.exe')).is_file():
                 raise ValueError('Falta '+str(fusion/(name+'.exe')))
-        local_mode = bool(self.c.get('files'))
+        automatic_mode = not self.c.get('files') and not self.c.get('index')
+        source_files = self.c.get('files',[])
+        if automatic_mode:
+            from .cnig import AutomaticSource
+            self.state['input_mode'] = 'automatic_cnig'
+            source = AutomaticSource(root,self.run,self.check,self.progress,self.retry_authorization)
+            source_files = source.acquire(self.plots,epsg,self.c['radius'],self.c['cell'],self.c.get('support_distance',5.))
+            self.state['input_mode'] = 'automatic_cnig'
+        local_mode = bool(source_files)
         if local_mode:
             from .local import discover, select_local
-            candidates, inventory = discover(self.c['files'],epsg,self.c.get('assume_missing_crs',False),self.check,self.progress)
+            candidates, inventory = discover(source_files,epsg,self.c.get('assume_missing_crs',False),self.check,self.progress)
             atomic_json(self.run/'archivos_locales.json',inventory)
             tiles, mapping = select_local(self.plots,self.c['radius']+2*self.c['cell']+self.c.get('support_distance',5.),candidates)
             self.log('ARCHIVOS LOCALES: metadatos automáticos; procedencia LIDA3 y huellas oficiales no verificadas por cabecera')
-            self.state['input_mode'] = 'local_files'
+            if not automatic_mode:
+                self.state['input_mode'] = 'local_files'
         elif self.c.get('index'):
             tiles, mapping = select_tiles(self.plots,self.c['radius']+2*self.c['cell'],read_index(self.c['index'],epsg))
             self.state['input_mode'] = 'legacy_index'
         else:
-            raise ValueError('Seleccione archivos LAZ/LAS; no se necesita índice CSV')
+            raise ValueError('CNIG no proporcionó archivos descargables para las parcelas')
         # Snapshot deliberately excludes temporary or signed download URLs.
         atomic_json(self.run/'teselas.json',[{'key':t.sec,'name':t.name,'bbox':t.bbox,'epsg':t.epsg,'bounds_kind':'point_envelope' if local_mode else 'declared_official_footprint'} for t in tiles])
         laz, las = root/'originales', root/'LAS'

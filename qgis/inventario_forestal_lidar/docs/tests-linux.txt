@@ -1,3 +1,23 @@
+QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-agent'
+QFSFileEngine::open: No file name specified
+test_acquire_download_and_resume_without_browser (test_auto_qgis.AutomaticTests.test_acquire_download_and_resume_without_browser) ... /usr/lib/python3/dist-packages/osgeo/osr.py:410: FutureWarning: Neither osr.UseExceptions() nor osr.DontUseExceptions() has been explicitly called. In GDAL 4.0, exceptions will be enabled by default.
+  warnings.warn(
+ok
+test_auto_engine_needs_no_user_files_or_index (test_auto_qgis.AutomaticTests.test_auto_engine_needs_no_user_files_or_index) ... /workspace/otra-prueba/qgis/inventario_forestal_lidar/inventario_forestal_lidar/qgis_io.py:53: DeprecationWarning: QgsField constructor is deprecated
+  provider.addAttributes([QgsField(k,QVariant.Double if k in numeric else QVariant.String) for k in keys])
+ok
+test_query_axis_order_and_official_coverage_at_four_tile_corner (test_auto_qgis.AutomaticTests.test_query_axis_order_and_official_coverage_at_four_tile_corner) ... ok
+test_real_official_footprint_reprojection (test_auto_qgis.AutomaticTests.test_real_official_footprint_reprojection) ... ok
+test_browser_cancellation_closes_dedicated_instance (test_browser.BrowserTests.test_browser_cancellation_closes_dedicated_instance) ... ok
+test_browser_rejects_unexpected_filename (test_browser.BrowserTests.test_browser_rejects_unexpected_filename) ... ok
+test_browser_waits_for_approval_then_downloads (test_browser.BrowserTests.test_browser_waits_for_approval_then_downloads) ... ok
+test_actual_official_response (test_cnig.CatalogTests.test_actual_official_response) ... ok
+test_cancel_before_network (test_cnig.CatalogTests.test_cancel_before_network) ... ok
+test_empty_is_distinct_from_broken_response (test_cnig.CatalogTests.test_empty_is_distinct_from_broken_response) ... ok
+test_footprint_response_contract (test_cnig.CatalogTests.test_footprint_response_contract) ... ok
+test_pagination_and_duplicate_ids (test_cnig.CatalogTests.test_pagination_and_duplicate_ids) ... ok
+test_row_pairing_not_parallel_arrays (test_cnig.CatalogTests.test_row_pairing_not_parallel_arrays) ... ok
+test_version_policy (test_cnig.CatalogTests.test_version_policy) ... ok
 test_cancel_before_download (test_core.CoreTests.test_cancel_before_download) ... ok
 test_circle_can_exclude_uncovered_bbox_corners (test_core.CoreTests.test_circle_can_exclude_uncovered_bbox_corners) ... ok
 test_existing_original_reused_and_not_changed (test_core.CoreTests.test_existing_original_reused_and_not_changed) ... ok
@@ -22,26 +42,15 @@ test_metadata_evlr_and_truncation (test_local.LocalTests.test_metadata_evlr_and_
 test_metadata_las12_geokey (test_local.LocalTests.test_metadata_las12_geokey) ... ok
 test_metadata_laz_header_without_decompression (test_local.LocalTests.test_metadata_laz_header_without_decompression) ... ok
 test_missing_crs_requires_explicit_assumption (test_local.LocalTests.test_missing_crs_requires_explicit_assumption) ... ok
-QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-agent'
-QFSFileEngine::open: No file name specified
-Could not create AF_NETLINK socket (Operation not permitted)
-Could not create AF_NETLINK socket (Operation not permitted)
-Could not create AF_NETLINK socket (Operation not permitted)
-Could not create AF_NETLINK socket (Operation not permitted)
-Could not create AF_NETLINK socket (Operation not permitted)
 test_dialog_default_radius_and_fusion (test_qgis.QgisTests.test_dialog_default_radius_and_fusion) ... ok
-test_gpkg_csv_ids_and_geometry (test_qgis.QgisTests.test_gpkg_csv_ids_and_geometry) ... /workspace/otra-prueba/qgis/inventario_forestal_lidar/inventario_forestal_lidar/qgis_io.py:53: DeprecationWarning: QgsField constructor is deprecated
-  provider.addAttributes([QgsField(k,QVariant.Double if k in numeric else QVariant.String) for k in keys])
-ok
-test_local_engine_without_index_and_conversion_cache (test_qgis.QgisTests.test_local_engine_without_index_and_conversion_cache) ... /usr/lib/python3/dist-packages/osgeo/gdal.py:311: FutureWarning: Neither gdal.UseExceptions() nor gdal.DontUseExceptions() has been explicitly called. In GDAL 4.0, exceptions will be enabled by default.
-  warnings.warn(
-ok
+test_gpkg_csv_ids_and_geometry (test_qgis.QgisTests.test_gpkg_csv_ids_and_geometry) ... ok
+test_local_engine_without_index_and_conversion_cache (test_qgis.QgisTests.test_local_engine_without_index_and_conversion_cache) ... ok
 test_local_point_support_missing_neighbor_and_ground (test_qgis.QgisTests.test_local_point_support_missing_neighbor_and_ground) ... ok
 test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_complete) ... ok
 test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... ok
 
 ----------------------------------------------------------------------
-Ran 30 tests in 0.788s
+Ran 44 tests in 11.224s
 
 OK
 QGIS probado: 3.40.6-Bratislava

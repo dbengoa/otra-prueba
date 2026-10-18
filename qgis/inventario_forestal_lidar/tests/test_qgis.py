@@ -72,8 +72,8 @@ class QgisTests(unittest.TestCase):
         self.assertFalse(dialog.cancel_button.isEnabled())
         self.assertFalse(hasattr(dialog,'index'))
         self.assertFalse(dialog.assume_crs.isChecked())
-        dialog.set_sources(['/tmp/a.laz','/tmp/a.laz','/tmp/b.las'])
-        self.assertEqual(len(dialog.files),2)
+        self.assertFalse(hasattr(dialog,'files'))
+        self.assertFalse(dialog.auth_button.isEnabled())
         dialog.close()
 
     def test_wkt_crs_and_compound(self):

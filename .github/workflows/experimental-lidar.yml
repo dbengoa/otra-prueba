@@ -1,7 +1,7 @@
 name: Inventario LiDAR experimental
 on:
   push:
-    branches: [experimental/inventario-forestal-lidar-0.2.0]
+    branches: [experimental/inventario-forestal-lidar-0.3.0]
     paths:
       - 'qgis/inventario_forestal_lidar/**'
       - '.github/workflows/experimental-lidar.yml'
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Portable tests (QGIS tests skipped here)
+      - name: Portable tests (QGIS and browser integration skipped here)
         run: python -m unittest discover -s tests -v
       - name: Build installable ZIP
         run: python tools/build.py dist
@@ -30,8 +30,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="lidar-v0.2.0-experimental-${GITHUB_SHA:0:7}"
-          gh release create "$tag" dist/inventario_forestal_lidar-0.2.0-experimental.zip dist/inventario_forestal_lidar-0.2.0-experimental.zip.sha256 \
+          tag="lidar-v0.3.0-experimental-${GITHUB_SHA:0:7}"
+          gh release create "$tag" dist/inventario_forestal_lidar-0.3.0-experimental.zip dist/inventario_forestal_lidar-0.3.0-experimental.zip.sha256 \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "Inventario forestal LiDAR 0.2.0 experimental" \
+            --title "Inventario forestal LiDAR 0.3.0 experimental" \
             --notes-file docs/RELEASE.md

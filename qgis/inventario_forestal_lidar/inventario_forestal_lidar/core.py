@@ -10,7 +10,7 @@ import struct
 
 CATALOG = 'https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3'
 DETAIL = 'https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec='
-VERSION = '0.2.0-experimental'
+VERSION = '0.3.0-experimental'
 
 class Cancelled(Exception):
     pass

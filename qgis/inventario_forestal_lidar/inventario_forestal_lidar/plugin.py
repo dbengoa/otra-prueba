@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import threading
 import webbrowser
 from qgis.PyQt.QtCore import Qt, pyqtSignal, QVariant
 from qgis.PyQt.QtWidgets import (QAction,QDialog,QVBoxLayout,QFormLayout,QLineEdit,
@@ -16,7 +17,8 @@ class Job(QgsTask):
 
     def __init__(self, config, plots):
         super().__init__('Inventario forestal LiDAR',QgsTask.CanCancel)
-        self.engine = Engine(config,plots,self.isCanceled,self.report)
+        self.retry_authorization = threading.Event()
+        self.engine = Engine(config,plots,self.isCanceled,self.report,self.retry_authorization)
         self.message = ''
         self.result_dir = ''
 
@@ -42,7 +44,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.2.0')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.3.0')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -60,9 +62,6 @@ class Dialog(QDialog):
         self.cell.setRange(.1,20)
         self.cell.setValue(1)
         self.output = QLineEdit()
-        self.files = []
-        self.files_summary = QLineEdit('Ningún archivo seleccionado')
-        self.files_summary.setReadOnly(True)
         self.assume_crs = QCheckBox('Asumir CRS de parcelas sólo en archivos sin CRS (lo he comprobado)')
         self.support = QDoubleSpinBox()
         self.support.setRange(.5,20)
@@ -74,21 +73,23 @@ class Dialog(QDialog):
         form.addRow('Radio',self.radius)
         form.addRow('Celda MDT (m)',self.cell)
         form.addRow('Carpeta sin espacios',self.path_row(self.output,False))
-        form.addRow('LAZ/LAS descargados',self.sources_row())
         form.addRow('',self.assume_crs)
         form.addRow('Distancia máxima sin apoyo',self.support)
         form.addRow('FUSION',self.fusion)
         outer.addLayout(form)
-        outer.addWidget(QLabel('Seleccione los LAZ/LAS de CNIG, incluidas las teselas vecinas. No necesita CSV.\nSe leen metadatos y se comprueba apoyo de puntos y suelo. La descarga/autorización\nse completa en el portal oficial; la cabecera no acredita la cobertura PNOA3.'))
+        outer.addWidget(QLabel('Descarga automática PNOA3 desde las parcelas: consulta CNIG → LAZ → LAS → FUSION.\nSi CNIG exige autorización, complete el paso en la ventana de Edge/Chrome.\nEl plugin guarda las descargas y continúa el cálculo; no necesita cargar archivos ni CSV.'))
         buttons = QHBoxLayout()
-        self.catalog = QPushButton('Consultar PNOA3 en CNIG')
+        self.catalog = QPushButton('Ayuda / portal CNIG')
         self.catalog.clicked.connect(lambda:webbrowser.open(CATALOG))
         self.start = QPushButton('Ejecutar / reanudar')
         self.start.clicked.connect(self.execute)
         self.cancel_button = QPushButton('Cancelar')
         self.cancel_button.setEnabled(False)
         self.cancel_button.clicked.connect(self.cancel)
-        for button in (self.catalog,self.start,self.cancel_button):
+        self.auth_button = QPushButton('Continuar autorización')
+        self.auth_button.setEnabled(False)
+        self.auth_button.clicked.connect(self.continue_authorization)
+        for button in (self.catalog,self.start,self.auth_button,self.cancel_button):
             buttons.addWidget(button)
         outer.addLayout(buttons)
         self.bar = QProgressBar()
@@ -97,39 +98,10 @@ class Dialog(QDialog):
         self.messages.setReadOnly(True)
         outer.addWidget(self.messages)
 
-    def sources_row(self):
-        from qgis.PyQt.QtWidgets import QWidget
-        box = QWidget()
-        layout = QHBoxLayout(box)
-        layout.setContentsMargins(0,0,0,0)
-        layout.addWidget(self.files_summary)
-        files = QPushButton('Archivos…')
-        folder = QPushButton('Carpeta…')
-        clear = QPushButton('Vaciar')
-        files.clicked.connect(self.choose_files)
-        folder.clicked.connect(self.choose_folder)
-        clear.clicked.connect(lambda:self.set_sources([]))
-        for button in (files,folder,clear):
-            layout.addWidget(button)
-        return box
-
-    def set_sources(self,paths):
-        self.files = sorted({str(Path(p).resolve()) for p in paths})
-        self.files_summary.setText(str(len(self.files))+' archivos LAZ/LAS seleccionados')
-        self.files_summary.setToolTip('\n'.join(self.files))
-
-    def choose_files(self):
-        paths,_ = QFileDialog.getOpenFileNames(self,'LAZ/LAS descargados de CNIG','','Nubes LiDAR (*.laz *.las *.LAZ *.LAS)')
-        if paths:
-            self.set_sources(self.files+paths)
-
-    def choose_folder(self):
-        folder = QFileDialog.getExistingDirectory(self,'Carpeta de originales LAZ/LAS')
-        if folder:
-            # Do not accidentally add our own converted or normalized derivatives.
-            paths = [str(p) for p in Path(folder).rglob('*') if p.is_file() and p.suffix.lower() in ('.las','.laz')
-                     and not any(part.lower() in ('resultados','las') for part in p.relative_to(folder).parts[:-1])]
-            self.set_sources(self.files+paths)
+    def continue_authorization(self):
+        if self.job:
+            self.job.retry_authorization.set()
+            self.messages.appendPlainText('Se solicita reintentar el botón oficial de descarga, sin eludir la autorización.')
 
     def path_row(self,edit,file):
         from qgis.PyQt.QtWidgets import QWidget
@@ -168,9 +140,7 @@ class Dialog(QDialog):
             if not output or not Path(output).is_absolute():
                 raise ValueError('Seleccione una carpeta absoluta de trabajo')
             validate(plots,self.radius.value(),output)
-            if not self.files:
-                raise ValueError('Seleccione archivos LAZ/LAS descargados de CNIG')
-            config = {'output':output,'files':list(self.files),'assume_missing_crs':self.assume_crs.isChecked(),
+            config = {'output':output,'assume_missing_crs':self.assume_crs.isChecked(),
                       'support_distance':self.support.value(),'fusion':self.fusion.text(),
                       'epsg':int(layer.crs().authid().split(':')[1]),'radius':self.radius.value(),'cell':self.cell.value()}
             self.job = Job(config,plots)
@@ -186,6 +156,7 @@ class Dialog(QDialog):
     def status(self,n,text):
         self.bar.setValue(int(n))
         self.messages.appendPlainText(text)
+        self.auth_button.setEnabled(self.job is not None and text.startswith('CNIG autorización:'))
 
     def cancel(self):
         if self.job:
@@ -195,6 +166,7 @@ class Dialog(QDialog):
     def finished(self,path,message):
         self.start.setEnabled(True)
         self.cancel_button.setEnabled(False)
+        self.auth_button.setEnabled(False)
         self.messages.appendPlainText((message or 'Completado')+'\nResultados y registro: '+path)
         self.job = None
         if not message:

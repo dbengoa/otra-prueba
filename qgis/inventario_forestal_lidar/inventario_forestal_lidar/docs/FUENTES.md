@@ -1,53 +1,73 @@
-# Verificación documental — 18 de octubre de 2026
+# Fuentes y protocolo comprobado — 18 de octubre de 2026
+
+## CNIG: verificación primaria directa
+
+Se obtuvieron respuestas reales del dominio oficial con cabeceras `User-Agent` del
+plugin y `X-Requested-With: XMLHttpRequest`, HTTPS verificado, sin desactivar TLS:
+
+- [Catálogo LIDA3](https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3):
+  HTTP 200, HTML y JavaScript oficial inspeccionados.
+- `POST https://centrodedescargas.cnig.es/CentroDescargas/archivosSerie` con
+  `codAgr=MOMDT`, `codSerie=LIDA3`, `numPagina` y `coordenadas` GeoJSON lon/lat:
+  HTTP 200. El fragmento incluye `codSerie`, `totalArchivos`, filas de nombres y
+  `linkDescDir_<sec>`. Se cotejó la paginación del propio JavaScript.
+- [Ficha de ejemplo](https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec=12752563):
+  HTTP 200. Identifica la serie LIDA3 y el control `bDescDir`. Su manejador ejecuta
+  reCAPTCHA con acción `preautorizar_descarga`, solicita `preAutorizarDescarga` y sólo
+  si `autorizado == 'S'` continúa a `initDescargaDir`/licencia/formulario de descarga.
+- `POST https://centrodedescargas.cnig.es/CentroDescargas/localizarCoordsSec` con
+  `secuencial=12752563`: HTTP 200, `coordsJson` FeatureCollection/MultiPolygon en lon/lat.
+  La ficha lo lee con OpenLayers GeoJSON y proyección de visualización EPSG:3857.
+- `POST initDescargaDir` de diagnóstico respondió HTTP 200 con `muestraLic=NO` y
+  `autorizado=null`. **Esto no se interpreta como autorización de descarga**. La nueva
+  implementación deja esa secuencia al botón oficial del navegador y no solicita el
+  binario desde urllib.
+
+Algunas peticiones GET anteriores sin cabecera AJAX respondieron 503. Ese resultado no
+afectó a la búsqueda POST verificada, ni justifica sustituir la descarga por selección
+manual. Los endpoints son internos del portal y pueden cambiar.
+
+## Consulta real entre cuatro teselas
+
+Se consultó la parcela de diagnóstico EPSG:25829 `(629000, 4780000)`, radio 15 m,
+celda 1 m y margen, sobre una esquina entre cuatro teselas. El catálogo devolvió:
+
+| sec | Nombre |
+|---|---|
+| 12752563 | PNOA-2024-GAL-628-4780-H29-NPC01.LAZ |
+| 12726205 | PNOA-2024-GAL-628-4781-H29-NPC01.LAZ |
+| 12744109 | PNOA-2024-GAL-629-4780-H29-NPC01.LAZ |
+| 12739748 | PNOA-2024-GAL-629-4781-H29-NPC01.LAZ |
+
+Se solicitaron las cuatro geometrías oficiales y se comprobó su unión. Los polígonos
+publicados terminan a 0,01 m de la siguiente celda; con tolerancia de 0,02 m, el área
+restante del círculo ampliado fue 0 m². No se inventaron huellas a partir de nombres.
+La respuesta y el plan de prueba están en `live-cnig-plan.json` y `live-cnig-coverage.json`.
+**No se descargaron esos LAZ ni se ejecutó FUSION en esta consulta.**
 
 ## FUSION
 
 Fuente primaria: [manual FUSION 4.61, septiembre de 2024](https://forsys.sefs.washington.edu/software/fusion/FUSION_manual.pdf).
-Se revisaron las secciones LDA2LAS (p. 111), GridSurfaceCreate (p. 92), ClipData (p. 43)
-CloudMetrics (p. 49) y DTM2ASCII (p. 66); son páginas impresas, no el índice del lector PDF.
-
-Plantillas implementadas:
+Se revisaron LDA2LAS (p. 111), GridSurfaceCreate (p. 92), ClipData (p. 43),
+CloudMetrics (p. 49) y DTM2ASCII (p. 66), según numeración impresa.
 
 ```text
-C:\FUSION\LDA2LAS.exe entrada.laz salida.las
-C:\FUSION\GridSurfaceCreate.exe /class:2 mdt.dtm 1 M M 1 <huso> 0 0 teselas.txt
-C:\FUSION\DTM2ASCII.exe /raster mdt.dtm mdt.asc
-C:\FUSION\ClipData.exe /shape:1 teselas.txt original.las xmin ymin xmax ymax
-C:\FUSION\ClipData.exe /shape:1 /dtm:mdt.dtm /height teselas.txt normalizada.las xmin ymin xmax ymax
-C:\FUSION\CloudMetrics.exe /new normalizada.las cloudmetrics.csv
+LDA2LAS.exe entrada.laz salida.las
+GridSurfaceCreate.exe /class:2 mdt.dtm 1 M M 1 <huso> 0 0 teselas.txt
+DTM2ASCII.exe /raster mdt.dtm mdt.asc
+ClipData.exe /shape:1 teselas.txt original.las xmin ymin xmax ymax
+ClipData.exe /shape:1 /dtm:mdt.dtm /height teselas.txt normalizada.las xmin ymin xmax ymax
+CloudMetrics.exe /new normalizada.las cloudmetrics.csv
 ```
 
-Se usa una caja de diámetro `2 × radio` centrada en el punto para el círculo. Los
-archivos de lista `.txt` evitan límites de longitud al trabajar entre teselas.
-Los códigos de datum `0 0` no atribuyen a ETRS89 un código NAD83 ni a las alturas
-ortométricas españolas un datum norteamericano. El CRS correcto se conserva en las
-salidas GeoPackage y en el manifiesto. Las opciones se verificaron documentalmente;
-su compatibilidad con la instalación local debe confirmarse con el smoke test.
+El círculo usa caja de diámetro `2 × radio`. Los códigos de datum `0 0` no atribuyen
+códigos norteamericanos a los datos españoles; el CRS correcto se mantiene en el
+manifiesto y GeoPackage. Los `.txt` de entrada permiten combinar teselas sin exceder
+la longitud de la línea de comandos. El ejecutable real Windows sigue pendiente de prueba.
 
-## CNIG
+## Metadatos de las nubes
 
-- [Catálogo oficial LIDA3](https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3).
-- [Ficha oficial de ejemplo](https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec=12504242).
-- [Novedad CNIG sobre descarga masiva](https://centrodedescargas.cnig.es/CentroDescargas/https%3A/centrodedescargas.cnig.es/CentroDescargas/novedades?codSerie=MAPLI).
-
-El catálogo describe unidades de 1 km, LAZ, UTM y alturas ortométricas. También
-identifica varios niveles NPC; mezclarlos sin selección puede duplicar datos.
-La ficha de ejemplo sólo acredita la nomenclatura del producto; no se usa como índice
-espacial ni se afirma que cubra las parcelas del usuario.
-
-Intentos HTTP directos al catálogo y a `/lidar-tercera-cobertura`: HTTP 503 desde el
-entorno de desarrollo. Se contrastó el contenido oficial mediante consulta web.
-No se ha validado búsqueda espacial programática, descarga binaria, autorización
-real, ni un contrato de API de CNIG. La versión utiliza consulta oficial en navegador,
-índice explícito y enlaces autorizados o descargas oficiales manuales.
-
-## Cambio 0.2.0: metadatos locales
-
-Se contrastó la representación CRS con la especificación ASPRS LAS: GeoTIFF en
-`LASF_Projection`/34735 y WKT en 2112, incluidos registros extendidos. Referencias
-primarias: [documentos ASPRS](https://community.asprs.org/leadership-restricted/leadership-content/public-documents/standards)
-y [representación WKT en LAS](https://asprslas.org/latest/03_crs.html).
-El lector de esta versión admite LAS 1.0–1.4; no anuncia soporte LAS 1.5.
-
-El catálogo CNIG volvió a responder HTTP 503. La nueva interfaz usa exclusivamente
-archivos locales; ya no necesita un índice ni identificadores `sec`.
+[Documentos ASPRS](https://community.asprs.org/leadership-restricted/leadership-content/public-documents/standards)
+y [representación CRS WKT](https://asprslas.org/latest/03_crs.html). El lector admite
+LAS 1.0–1.4 y VLR/EVLR de GeoTIFF/WKT; no anuncia LAS 1.5. Las cabeceras no sustituyen
+la comprobación de huellas oficiales ni de apoyo de puntos reales.

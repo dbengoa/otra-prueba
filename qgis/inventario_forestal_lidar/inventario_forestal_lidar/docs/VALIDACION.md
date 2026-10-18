@@ -1,48 +1,68 @@
-# Validación 0.2.0 experimental
+# Validación de la versión 0.3.0 experimental
 
-Fecha: 18 de octubre de 2026. No se afirma validación Windows.
+Fecha: 18 de octubre de 2026. Se distingue cada entorno y cada sustituto.
 
-## Ejecutado
+## Ejecutado con servicio CNIG real
 
-- 24 pruebas portables aprobadas con Python estándar.
-- 30 pruebas aprobadas con QGIS 3.40.6-Bratislava/GDAL/Numpy en Linux, Qt offscreen:
-  las 24 anteriores y 6 pruebas QGIS/GDAL reales.
-- Interfaz sin campo de índice; selección múltiple sin rutas repetidas, defaults y
-  casilla de asumir CRS desactivada. La apertura del selector nativo Windows no se prueba.
-- Lectura binaria de metadatos LAS 1.2 y 1.4, VLR/EVLR, GeoTIFF, WKT y CRS compuesto;
-  rechazo de WKT/GeoTIFF contradictorios, CRS incompatible, registros truncados,
-  escalas o extensiones inválidas. CRS ausente exige consentimiento explícito.
-- Fixture de cabecera marcada LAZ: lectura de metadatos sin descompresión. **No es
-  un flujo LAZ comprimido real ni acredita compatibilidad del decodificador FUSION.**
-- Deduplicación por contenido de copias con nombres distintos y detección de solapes.
-- Cuatro LAS sintéticos reales con coordenadas y suelo: apoyo muestreado correcto;
-  falta una tesela: error; sólo vegetación y ningún suelo: error.
-- Flujo del motor sin `index` ni CSV, usando cuatro LAS y rutas fuente con espacios.
-  **FUSION sustituido por un fake** que produce salidas de prueba. Se comprueban los
-  comandos encadenados, QGIS/GDAL real, exportaciones, manifiestos, originales intactos
-  y segunda ejecución sin repetir conversiones. No acredita los cálculos FUSION.
-- Pruebas heredadas de error, cancelación, cabecera, cobertura oficial declarada,
-  autorización del adaptador antiguo y CSV/GPKG por ID siguen aprobadas.
-- Nueva consulta HTTP real CNIG: 503. La descarga no está validada.
+- Catálogo, ficha y código JavaScript oficial: HTTP 200 con cabecera AJAX.
+- Búsqueda espacial **POST** LIDA3 para radio y margen, no sólo centro.
+- Caso de esquina de cuatro teselas en EPSG:25829 `(629000,4780000)`.
+- Identificación de cuatro secuenciales diferentes y solicitud de sus huellas oficiales.
+- Unión de geometrías con tolerancia de 2 cm: círculo ampliado cubierto, 0 m² restante.
+- Revisión del flujo oficial reCAPTCHA → preAutorizarDescarga → initDescargaDir →
+  licencia si procede → formulario descargaDir.
+- **No se ejecutó autorización ni descarga LAZ real**. La respuesta de initDescargaDir
+  de diagnóstico no se consideró autorización. No se llamó directamente al endpoint
+  binario para omitir reCAPTCHA.
 
-Salida completa en `tests-linux.txt`. La CI ejecuta sólo las 24 portables y omite
-explícitamente las 6 pruebas que dependen del entorno QGIS.
+Evidencia: `live-cnig-plan.json`, `live-cnig-coverage.json` y FUENTES.md.
 
-## Pendiente en Windows
+## Ejecutado en Linux/QGIS y Chromium
 
-1. Instalar el ZIP 0.2.0, reiniciar QGIS y comprobar el selector de archivos/carpeta.
-2. Ejecutar `tools/windows_smoke.py` con FUSION 4.61: cuatro LAS con CRS, círculo en
-   esquina, terreno de 100 m, alturas 0/10 m y exportaciones. El script ya usa la nueva
-   entrada local sin índice CSV.
-3. LAZ PNOA3 real (LAS 1.4 RGBI): metadatos CRS, conversión y control de apoyo. Revisar
-   año, NPC y datum vertical en la fuente oficial; no se infieren de la cabecera.
-4. Parcelas dentro de una tesela, en un borde y en esquina de cuatro teselas.
-5. Cancelación durante lectura, conversión y cálculo; `taskkill /T` y originales intactos.
-6. Unicode, falta de espacio/permisos, lotes grandes, biblioteca LAZ de FUSION y
-   recuperación tras una ejecución interrumpida.
-7. Autorización y descarga CNIG en el portal real. La búsqueda espacial y descarga
-   programática en línea siguen pendientes de un contrato oficial verificable.
+**44 pruebas aprobadas**, con `/usr/bin/python3`, QGIS 3.40.6-Bratislava, GDAL/Numpy,
+Qt offscreen y Chromium real headless para los tres ensayos locales del navegador.
 
-La comprobación local de apoyo tiene una escala configurable; no puede certificar
-completitud de adquisición ni detectar huecos más pequeños que esa escala. Los límites
-de cabecera son envolventes de puntos, no huellas oficiales de entrega.
+- **31 portables:** validaciones, metadatos LAS/LAZ, deduplicación, argumentos FUSION,
+  errores/cancelación y parser CNIG con una fila real del portal. Catálogo vacío se
+  distingue de respuesta HTML inesperada. Se prueban paginación, página repetida,
+  política de año/NPC, empate ambiguo y contrato de huellas.
+- **10 QGIS/GDAL:** CRS WKT/GeoTIFF, reproyección de huella real, ejes lon/lat, unión de
+  cuatro huellas, vecina ausente, control de puntos/suelo, interfaz sin entradas manuales,
+  exportación CSV/GPKG por ID, reutilización e integración del motor.
+- El ensayo **motor automático sin `files` ni `index`** sustituye consulta/descarga CNIG
+  y ejecutables FUSION por fixtures. QGIS/GDAL, recibos, originales y exportaciones son
+  reales. No se presenta como cálculo FUSION ni descarga de CNIG reales.
+- **3 Chromium/CDP reales contra servidor loopback:** espera de aprobación simulada sin
+  petición binaria previa; descarga tras aprobación; rechazo de nombre inesperado;
+  cancelación y cierre de la instancia dedicada. El servidor entrega LAS sintético y
+  simula una autorización con una bandera JavaScript. **No prueba reCAPTCHA de CNIG**.
+- Lectura de cabecera marcada como LAZ sin descompresión: fixture estructural, no LAZ
+  comprimido real. Cancelación de procesos FUSION sólo simulada en Linux.
+
+Salida completa: `tests-linux.txt`. La CI sin QGIS/navegador ejecuta las 31 portables y
+omite explícitamente 13 ensayos de integración. El control FUSION independiente de
+`tools/windows_smoke.py` usa LAS sintéticos y no cubre descarga CNIG.
+
+## Pendiente de ejecutar en Windows
+
+1. Instalar el ZIP 0.3.0 y reiniciar QGIS; comprobar que no pide LAZ/LAS ni CSV.
+2. Con Edge/Chrome y FUSION 4.61, usar parcelas de cobertura LIDA3 conocida: una interior,
+   otra en borde y otra en esquina. El plugin debe localizar y descargar cada tesela una
+   sola vez y continuar sin selección de archivos.
+3. Completar reCAPTCHA/licencia únicamente en el portal oficial cuando lo solicite.
+   Confirmar que una autorización denegada no se elude y que «Continuar autorización»
+   sólo vuelve a activar el control oficial. Probar rechazo, espera y cierre del navegador.
+4. LAZ PNOA3 real (LAS 1.4/RGBI): validar CRS, recuentos, terreno clase 2, alturas
+   normalizadas y concordancia CSV/GeoPackage por ID.
+5. Ejecutar `tools/windows_smoke.py` para verificar FUSION con terreno de 100 m,
+   alturas 0/10 m y círculo entre cuatro teselas sintéticas.
+6. Repetir ejecución: originales y LAS verificados se reutilizan, métricas nuevas.
+7. Cancelar durante descarga, copia a Q:/NAS, conversión y CloudMetrics. Verificar
+   cierre sólo del navegador dedicado, `taskkill /T`, originales completos intactos,
+   `.part` no admitido como original y reanudación.
+8. Permisos, disco lleno, carpetas Unicode, proxy local, política empresarial de Edge
+   que deshabilite depuración, y volúmenes de trabajo reales.
+
+El adaptador depende del protocolo actual del portal, sin API pública estable. La
+cobertura oficial tiene tolerancia centimétrica y el apoyo de puntos se comprueba a
+escala configurable; no se certifica completitud de adquisición a cualquier escala.

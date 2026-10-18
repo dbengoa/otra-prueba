@@ -1,19 +1,21 @@
-Versión 0.2.0 experimental: **ya no se necesita el índice CSV CNIG**.
+0.3.0 experimental: **descarga automática CNIG desde la capa de parcelas**.
 
-Seleccione los originales LAZ/LAS con «Archivos…» o «Carpeta…». El complemento lee
-metadatos y CRS automáticamente, deduplica copias, conserva los originales y comprueba
-apoyo de puntos y suelo antes del MDT y las métricas. Rechaza CRS incompatibles y
-archivos solapados; permite asumir el CRS de parcelas sólo si falta y el usuario lo
-confirma explícitamente mediante la casilla correspondiente.
+La interfaz ya no pide CSV ni archivos LAZ/LAS. Consulta espacialmente LIDA3, pagina y
+deduplica resultados, obtiene huellas oficiales y comprueba cobertura. Descarga mediante
+el botón real del portal en una ventana independiente de Edge/Chrome, respetando su
+reCAPTCHA, preautorización y licencia. El usuario sólo interviene si CNIG lo requiere.
+El plugin recoge los originales y continúa con conversión LAS, MDT clase 2, ClipData,
+CloudMetrics y CSV/GeoPackage por ID. Conserva y reutiliza archivos verificados.
 
-La descarga/autorización continúa en el portal oficial CNIG. Su catálogo devolvió
-HTTP 503 en desarrollo; no se afirma búsqueda automática en línea. El control local
-es muestreado y no certifica huellas oficiales ni ausencia de huecos a cualquier escala.
+Instale el ZIP sin descomprimir y reinicie QGIS. Requiere QGIS 3.34+, Windows,
+FUSION 4.61 en C:\FUSION y Edge o Chrome. Sin modelización estadística.
 
-Requiere Windows, QGIS 3.34+ y FUSION 4.61 en C:\FUSION. Instale el ZIP sin descomprimir
-con el gestor QGIS y reinicie QGIS para recargar el código de la versión anterior.
+**Verificado:** consulta CNIG real HTTP 200 y huellas de cuatro teselas en una esquina;
+44 pruebas Linux/QGIS/Chromium aprobadas. El navegador se probó contra un servidor
+local con aprobación simulada, y la integración del motor sustituye FUSION por fixtures.
+**Pendiente:** autorización/descarga CNIG real y FUSION de extremo a extremo en Windows.
+No se presenta la prueba local como validación del reCAPTCHA o LAZ real.
 
-Pruebas ejecutadas: 30 aprobadas en Linux/QGIS 3.40.6, incluidas 24 portables. El ensayo
-del flujo completo utiliza un sustituto de FUSION; la exportación QGIS/GDAL es real.
-Pendientes: FUSION real y prueba PNOA3 LAZ/Windows. La CI ejecuta las 24 portables.
-Sin modelización estadística en esta fase. Consulte README y docs/VALIDACION.md.
+La descarga depende de autorización CNIG y de un protocolo web sin contrato estable.
+El plugin no elude ese control ni cambia el flujo por carga manual. Detalles en README,
+docs/FUENTES.md y docs/VALIDACION.md.
