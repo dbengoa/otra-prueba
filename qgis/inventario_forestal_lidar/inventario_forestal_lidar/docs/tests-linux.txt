@@ -1,0 +1,47 @@
+test_cancel_before_download (test_core.CoreTests.test_cancel_before_download) ... ok
+test_circle_can_exclude_uncovered_bbox_corners (test_core.CoreTests.test_circle_can_exclude_uncovered_bbox_corners) ... ok
+test_existing_original_reused_and_not_changed (test_core.CoreTests.test_existing_original_reused_and_not_changed) ... ok
+test_failure_and_cancel_write_state (test_core.CoreTests.test_failure_and_cancel_write_state) ... ok
+test_four_tile_corner_and_dedup (test_core.CoreTests.test_four_tile_corner_and_dedup) ... ok
+test_hole_not_just_center_or_perimeter (test_core.CoreTests.test_hole_not_just_center_or_perimeter) ... ok
+test_ids_and_radius (test_core.CoreTests.test_ids_and_radius) ... ok
+test_index_duplicate_and_wrong_crs (test_core.CoreTests.test_index_duplicate_and_wrong_crs) ... ok
+test_las_truncated_empty_html_and_compressed (test_core.CoreTests.test_las_truncated_empty_html_and_compressed) ... ok
+test_missing_authorization (test_core.CoreTests.test_missing_authorization) ... ok
+test_overlapping_versions_rejected (test_core.CoreTests.test_overlapping_versions_rejected) ... ok
+test_parameters (test_core.CoreTests.test_parameters) ... ok
+test_process_cancellation (test_core.CoreTests.test_process_cancellation) ... ok
+test_process_nonzero (test_core.CoreTests.test_process_nonzero) ... ok
+test_url_policy (test_core.CoreTests.test_url_policy) ... ok
+test_content_deduplication_and_provenance (test_local.LocalTests.test_content_deduplication_and_provenance) ... ok
+test_discovery_cancellation (test_local.LocalTests.test_discovery_cancellation) ... ok
+test_invalid_envelope_scale_record (test_local.LocalTests.test_invalid_envelope_scale_record) ... ok
+test_known_mismatch_never_overridden (test_local.LocalTests.test_known_mismatch_never_overridden) ... ok
+test_local_four_neighbors_and_overlap (test_local.LocalTests.test_local_four_neighbors_and_overlap) ... ok
+test_metadata_evlr_and_truncation (test_local.LocalTests.test_metadata_evlr_and_truncation) ... ok
+test_metadata_las12_geokey (test_local.LocalTests.test_metadata_las12_geokey) ... ok
+test_metadata_laz_header_without_decompression (test_local.LocalTests.test_metadata_laz_header_without_decompression) ... ok
+test_missing_crs_requires_explicit_assumption (test_local.LocalTests.test_missing_crs_requires_explicit_assumption) ... ok
+QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-agent'
+QFSFileEngine::open: No file name specified
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+test_dialog_default_radius_and_fusion (test_qgis.QgisTests.test_dialog_default_radius_and_fusion) ... ok
+test_gpkg_csv_ids_and_geometry (test_qgis.QgisTests.test_gpkg_csv_ids_and_geometry) ... /workspace/otra-prueba/qgis/inventario_forestal_lidar/inventario_forestal_lidar/qgis_io.py:53: DeprecationWarning: QgsField constructor is deprecated
+  provider.addAttributes([QgsField(k,QVariant.Double if k in numeric else QVariant.String) for k in keys])
+ok
+test_local_engine_without_index_and_conversion_cache (test_qgis.QgisTests.test_local_engine_without_index_and_conversion_cache) ... /usr/lib/python3/dist-packages/osgeo/gdal.py:311: FutureWarning: Neither gdal.UseExceptions() nor gdal.DontUseExceptions() has been explicitly called. In GDAL 4.0, exceptions will be enabled by default.
+  warnings.warn(
+ok
+test_local_point_support_missing_neighbor_and_ground (test_qgis.QgisTests.test_local_point_support_missing_neighbor_and_ground) ... ok
+test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_complete) ... ok
+test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.788s
+
+OK
+QGIS probado: 3.40.6-Bratislava

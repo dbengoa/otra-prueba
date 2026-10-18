@@ -70,6 +70,84 @@ class QgisTests(unittest.TestCase):
         self.assertEqual(dialog.radius.value(),15)
         self.assertEqual(dialog.fusion.text(),'C:\\FUSION')
         self.assertFalse(dialog.cancel_button.isEnabled())
+        self.assertFalse(hasattr(dialog,'index'))
+        self.assertFalse(dialog.assume_crs.isChecked())
+        dialog.set_sources(['/tmp/a.laz','/tmp/a.laz','/tmp/b.las'])
+        self.assertEqual(len(dialog.files),2)
         dialog.close()
+
+    def test_wkt_crs_and_compound(self):
+        from osgeo import osr
+        from fixtures import write_cloud
+        from inventario_forestal_lidar.local import metadata,resolve_epsg
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/'wkt.las'
+            crs=osr.SpatialReference();crs.ImportFromEPSG(25830)
+            write_cloud(p,epsg=None,wkt=crs.ExportToWkt(),evlr=True)
+            self.assertEqual(resolve_epsg(metadata(p),25830),(25830,False))
+            vertical=osr.SpatialReference();vertical.ImportFromEPSG(5703)
+            compound=osr.SpatialReference();compound.SetCompoundCS('test',crs,vertical)
+            write_cloud(p,epsg=None,wkt=compound.ExportToWkt())
+            self.assertEqual(resolve_epsg(metadata(p),25830),(25830,False))
+            write_cloud(p,epsg=25829,wkt=crs.ExportToWkt())
+            with self.assertRaisesRegex(ValueError,'distintos'):resolve_epsg(metadata(p),25830)
+
+    def test_local_point_support_missing_neighbor_and_ground(self):
+        from fixtures import four_tiles,write_cloud
+        from inventario_forestal_lidar.local import verify_point_support
+        from inventario_forestal_lidar.core import Plot
+        with tempfile.TemporaryDirectory() as d:
+            paths=four_tiles(d)
+            p=Plot('001',400000,4600000)
+            report=verify_point_support(paths,p,10,2)
+            self.assertFalse(report['official_footprint_verified'])
+            self.assertGreater(report['sample_count'],100)
+            with self.assertRaisesRegex(ValueError,'insuficiente'):
+                verify_point_support(paths[:-1],p,10,2)
+            canopy=Path(d)/'canopy.las'
+            write_cloud(canopy,[(400000+x+.5,4600000+y+.5,110,5) for x in range(-20,20) for y in range(-20,20)])
+            with self.assertRaisesRegex(ValueError,'suelo clase 2'):
+                verify_point_support([str(canopy)],p,10,2)
+
+    def test_local_engine_without_index_and_conversion_cache(self):
+        import shutil
+        import json
+        from unittest.mock import patch
+        from fixtures import four_tiles
+        from inventario_forestal_lidar.engine import Engine
+        from inventario_forestal_lidar.core import Plot,digest
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            sources=root/'source with spaces';sources.mkdir()
+            paths=four_tiles(sources)
+            before={p:digest(p) for p in paths}
+            fusion=root/'fusion';fusion.mkdir()
+            for n in ('LDA2LAS','GridSurfaceCreate','ClipData','CloudMetrics','DTM2ASCII'):(fusion/(n+'.exe')).touch()
+            calls=[]
+            def fake_fusion(args):
+                calls.append(args)
+                name=Path(args[0]).stem
+                if name=='LDA2LAS':shutil.copyfile(args[1],args[2])
+                elif name=='GridSurfaceCreate':Path(args[2]).write_bytes(b'mocked DTM')
+                elif name=='DTM2ASCII':
+                    Path(args[-1]).write_text('ncols 100\nnrows 100\nxllcorner 399950\nyllcorner 4599950\ncellsize 1\nNODATA_value -9999\n'+(' '.join(['100']*100)+'\n')*100)
+                elif name=='ClipData':
+                    output=args[-5]
+                    shutil.copyfile(paths[0],output)
+                elif name=='CloudMetrics':Path(args[-1]).write_text('Mean\n10\n')
+                else:raise AssertionError(args)
+            config=dict(output=str(root/'output'),files=paths,fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2)
+            with patch.object(Engine,'run_command',side_effect=fake_fusion):
+                first=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
+                conversions=len([a for a in calls if Path(a[0]).stem=='LDA2LAS'])
+                second=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
+            self.assertEqual(conversions,4)
+            self.assertEqual(len([a for a in calls if Path(a[0]).stem=='LDA2LAS']),4)
+            self.assertNotEqual(first,second)
+            self.assertTrue((first/'metricas.gpkg').is_file())
+            inventory=json.loads((first/'archivos_locales.json').read_text())
+            self.assertEqual(len(inventory),4)
+            self.assertEqual(json.loads((first/'estado.json').read_text())['input_mode'],'local_files')
+            self.assertEqual(before,{p:digest(p) for p in paths})
 
 if __name__=='__main__':unittest.main()

@@ -10,7 +10,7 @@ import struct
 
 CATALOG = 'https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3'
 DETAIL = 'https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec='
-VERSION = '0.1.0-experimental'
+VERSION = '0.2.0-experimental'
 
 class Cancelled(Exception):
     pass
@@ -32,6 +32,7 @@ class Tile:
     epsg: int
     url: str = ''
     sha256: str = ''
+    source: str = ''
 
     @property
     def key(self):
@@ -151,10 +152,11 @@ def las_header(path, allow_compressed=False):
     return count
 
 
-def digest(path):
+def digest(path, check=lambda:None):
     h = hashlib.sha256()
     with open(path,'rb') as f:
         for block in iter(lambda:f.read(1024*1024), b''):
+            check()
             h.update(block)
     return h.hexdigest()
 

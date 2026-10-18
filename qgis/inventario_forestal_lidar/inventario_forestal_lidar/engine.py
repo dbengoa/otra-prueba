@@ -121,7 +121,7 @@ class Engine:
         self.run.mkdir(parents=True)
         self.logfile = self.run/'proceso.log'
         self.logfile.touch()
-        self.state['config'] = {k:v for k,v in self.c.items() if k != 'index'}
+        self.state['config'] = {k:v for k,v in self.c.items() if k not in ('index','files')}
         self.state['started_utc'] = datetime.now(timezone.utc).isoformat()
         try:
             self._execute(root)
@@ -155,38 +155,56 @@ class Engine:
         for name in ('LDA2LAS','GridSurfaceCreate','ClipData','CloudMetrics','DTM2ASCII'):
             if not (fusion/(name+'.exe')).is_file():
                 raise ValueError('Falta '+str(fusion/(name+'.exe')))
-        tiles, mapping = select_tiles(self.plots,self.c['radius']+2*self.c['cell'],read_index(self.c['index'],epsg))
+        local_mode = bool(self.c.get('files'))
+        if local_mode:
+            from .local import discover, select_local
+            candidates, inventory = discover(self.c['files'],epsg,self.c.get('assume_missing_crs',False),self.check,self.progress)
+            atomic_json(self.run/'archivos_locales.json',inventory)
+            tiles, mapping = select_local(self.plots,self.c['radius']+2*self.c['cell']+self.c.get('support_distance',5.),candidates)
+            self.log('ARCHIVOS LOCALES: metadatos automáticos; procedencia LIDA3 y huellas oficiales no verificadas por cabecera')
+            self.state['input_mode'] = 'local_files'
+        elif self.c.get('index'):
+            tiles, mapping = select_tiles(self.plots,self.c['radius']+2*self.c['cell'],read_index(self.c['index'],epsg))
+            self.state['input_mode'] = 'legacy_index'
+        else:
+            raise ValueError('Seleccione archivos LAZ/LAS; no se necesita índice CSV')
         # Snapshot deliberately excludes temporary or signed download URLs.
-        atomic_json(self.run/'teselas.json',[{'sec':t.sec,'name':t.name,'bbox':t.bbox,'epsg':t.epsg} for t in tiles])
+        atomic_json(self.run/'teselas.json',[{'key':t.sec,'name':t.name,'bbox':t.bbox,'epsg':t.epsg,'bounds_kind':'point_envelope' if local_mode else 'declared_official_footprint'} for t in tiles])
         laz, las = root/'originales', root/'LAS'
-        laz.mkdir(exist_ok=True)
+        if not local_mode:
+            laz.mkdir(exist_ok=True)
         las.mkdir(exist_ok=True)
         paths = {}
         pending = []
         for i,t in enumerate(tiles):
             self.check()
             self.progress(5+30*i/max(1,len(tiles)), 'Descarga/conversión '+t.name)
-            # sec provides collision-free paths for identically named catalog records.
-            srcdir = laz/t.sec
-            srcdir.mkdir(exist_ok=True)
-            src = srcdir/t.name
-            # Flat manually downloaded originals are accepted without moving them.
-            flat = laz/t.name
-            if not src.exists() and flat.exists():
-                src = flat
-            try:
-                self.download(t,src)
-            except AuthorizationRequired:
-                pending.append({'sec':t.sec,'name':t.name,'official_page':DETAIL+t.sec,'destination':str(src)})
-                continue
+            if local_mode:
+                src = Path(t.source)
+                las_header(src,True)
+                self.log('ORIGINAL LOCAL (sólo lectura) '+str(src))
+            else:
+                srcdir = laz/t.sec
+                srcdir.mkdir(exist_ok=True)
+                src = srcdir/t.name
+                flat = laz/t.name
+                if not src.exists() and flat.exists():
+                    src = flat
+                try:
+                    self.download(t,src)
+                except AuthorizationRequired:
+                    pending.append({'sec':t.sec,'name':t.name,'official_page':DETAIL+t.sec,'destination':str(src)})
+                    continue
             source_count = las_header(src, True)
-            fingerprint = digest(src)
-            out = las/(t.sec+'_'+Path(t.name).stem+'.las')
+            fingerprint = digest(src,self.check)
+            if local_mode and fingerprint != t.sha256:
+                raise ValueError('El original cambió durante la ejecución: '+t.name)
+            out = las/(t.sec+'.las') if local_mode else las/(t.sec+'_'+Path(t.name).stem+'.las')
             receipt = out.with_suffix('.json')
             reusable = False
             if out.exists() and receipt.exists():
                 previous = json.loads(receipt.read_text(encoding='utf-8'))
-                reusable = previous.get('source_sha256') == fingerprint and previous.get('las_sha256') == digest(out)
+                reusable = previous.get('source_sha256') == fingerprint and previous.get('las_sha256') == digest(out,self.check)
                 if reusable:
                     if las_header(out) != source_count:
                         reusable = False
@@ -197,7 +215,7 @@ class Engine:
                 if las_header(temporary) != source_count:
                     raise ValueError('La conversión perdió puntos: '+t.name)
                 temporary.replace(out)
-                atomic_json(receipt,{'source_sha256':fingerprint,'las_sha256':digest(out),'version':VERSION})
+                atomic_json(receipt,{'source_sha256':fingerprint,'las_sha256':digest(out,self.check),'version':VERSION})
             paths[t.sec] = out
             self.state['tiles'].append({'sec':t.sec,'source_sha256':fingerprint,'las':str(out)})
         if pending:
@@ -210,6 +228,12 @@ class Engine:
             self.progress(35+60*i/len(self.plots),'Parcela '+p.id)
             work = self.run/token(p.id)
             work.mkdir()
+            if local_mode:
+                from .local import verify_point_support
+                report = verify_point_support([paths[t.sec] for t in mapping[p.id]],p,
+                    self.c['radius']+2*self.c['cell'],self.c.get('support_distance',5.),self.check)
+                atomic_json(work/'cobertura.json',report)
+                self.log('COBERTURA MUESTREADA ID='+p.id+' muestras='+str(report['sample_count']))
             listing = work/'teselas.txt'
             listing.write_text('\n'.join(str(paths[t.sec]) for t in mapping[p.id])+'\n',encoding='utf-8')
             terrain, raw, normalized, metrics = [work/n for n in ('mdt.dtm','original.las','normalizada.las','cloudmetrics.csv')]

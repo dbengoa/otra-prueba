@@ -1,137 +1,123 @@
-# Inventario forestal LiDAR — 0.1.0 experimental
+# Inventario forestal LiDAR — 0.2.0 experimental
 
-Plugin QGIS para Windows que prepara métricas por centro de parcela con FUSION.
-Esta entrega no incluye ajuste, selección ni validación de modelos estadísticos.
+Plugin QGIS para Windows con FUSION 4.61 en `C:\FUSION`.
+**Ya no necesita preparar ni seleccionar un índice CSV.**
 
-**Estado: experimental, no validado de extremo a extremo con FUSION en Windows.**
-La interfaz, la exportación GeoPackage y la comprobación del MDT se han probado con
-QGIS 3.40.6/GDAL en Linux. Consulte [VALIDACION.md](docs/VALIDACION.md).
+## Actualizar desde 0.1.0
 
-## Instalación
+1. Descargue `inventario_forestal_lidar-0.2.0-experimental.zip` desde la nueva release.
+2. En QGIS cierre el complemento y abra **Complementos → Administrar e instalar
+   complementos → Instalar a partir de ZIP**. Instale el ZIP sin descomprimir.
+3. Si QGIS mantiene cargada la versión antigua, reinicie QGIS. La ventana debe mostrar
+   **Experimental 0.2.0** y el campo **LAZ/LAS descargados**, sin «Índice oficial CNIG».
 
-1. Instale QGIS 3.34 o posterior para Windows (se recomienda 3.40 LTR).
-2. Instale por separado FUSION 4.61 en `C:\FUSION`, con sus bibliotecas de lectura LAZ.
-   No se redistribuyen los ejecutables de FUSION.
-3. En QGIS: **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
-   Seleccione `inventario_forestal_lidar-0.1.0-experimental.zip` y active el complemento.
-4. Abra **Complementos → Inventario forestal LiDAR**.
+Requisitos: QGIS 3.34 o posterior para Windows, FUSION 4.61 y sus bibliotecas LAZ.
+Numpy, GDAL y Qt se usan desde la instalación QGIS; no se requiere instalar laspy.
 
-## Uso
+## Uso sin índice
 
-- Cargue una capa de puntos simples con un centro por parcela y un campo ID único,
-  no vacío. Se procesan **todas** las entidades, no sólo la selección.
-- Use el CRS UTM de las teselas: ETRS89 EPSG:25828–25831, o REGCAN95 EPSG:4083.
-  Reproyecte antes si es necesario. No se reproyectan las nubes de puntos.
-- Seleccione ID, radio (15 m de forma predeterminada), celda MDT (1 m) y una carpeta
-  absoluta sin espacios, por ejemplo `C:\InventarioLidar`.
-- Pulse **Consultar PNOA3 en CNIG** para abrir el catálogo oficial LIDA3.
-- Prepare el índice CSV descrito abajo. Incluya las vecinas que cubren el círculo y
-  **dos celdas de margen**. El margen es necesario para comprobar el MDT y su interpolación.
-- Pulse **Ejecutar / reanudar**. Si faltan descargas autorizadas, consulte
-  `resultados/<ejecucion>/descargas_pendientes.json`, complete el trámite oficial y vuelva
-  a ejecutar. Una ejecución nueva conserva los resultados anteriores.
-- **Cancelar** solicita detener la descarga o el proceso externo activo. Durante una
-  lectura HTTP puede tardar hasta el timeout de 30 s. Los archivos parciales `.part`
-  no se reutilizan como originales completos; el próximo intento reinicia esa descarga.
+1. Descargue las teselas PNOA tercera cobertura desde el portal oficial CNIG. El botón
+   **Consultar PNOA3 en CNIG** abre el catálogo. Complete allí la autorización o la cesta
+   oficial si se requiere. Seleccione un solo año/vuelo/nivel NPC por zona.
+2. Seleccione la capa de centros, su campo ID único, el radio (15 m por defecto) y
+   una carpeta de trabajo sin espacios, por ejemplo `Q:\LIDAR\prueba2total`.
+3. En **LAZ/LAS descargados**, pulse **Archivos…** y seleccione uno o varios originales,
+   o **Carpeta…** para buscar archivos recursivamente. Puede añadir archivos en varias
+   selecciones; **Vaciar** limpia la lista. El tooltip muestra las rutas seleccionadas.
+   Incluya las teselas vecinas para parcelas en límites y esquinas.
+4. El plugin lee automáticamente extensión de puntos, cantidad, formato, escalas y CRS
+   de los metadatos LAS/LAZ (GeoTIFF o WKT, incluidos EVLR). No usa el nombre del archivo
+   para inventar el huso o una huella oficial.
+5. Los centros deben usar el mismo CRS UTM que las nubes: ETRS89 EPSG:25828–25831 o
+   REGCAN95 EPSG:4083. Reproyecte la capa antes si hace falta. No se reproyectan las nubes.
+6. Sólo si el archivo carece de CRS y usted ha comprobado cuál es, active **Asumir CRS
+   de parcelas sólo en archivos sin CRS**. La decisión queda registrada. Esa casilla
+   nunca permite ignorar un CRS declarado incompatible o contradictorio.
+7. Pulse **Ejecutar / reanudar**. Se conservan los originales donde estaban, incluso
+   si sus carpetas o nombres contienen espacios. Los derivados se guardan en la carpeta
+   de trabajo sin espacios. Se procesan todas las entidades de la capa, no sólo la selección.
 
-## CNIG y autorización: alcance real de esta versión
+El ID debe ser único y no nulo. Se conserva como texto, incluidos los ceros iniciales.
 
-Se ha verificado documentalmente el catálogo de tercera cobertura **LIDA3**. No se ha
-verificado una API pública de búsqueda espacial/descarga automática. Los intentos
-HTTP desde el entorno de desarrollo devolvieron **503**, por lo que esta versión
-**no descubre automáticamente las teselas a partir únicamente de los centros**.
-La consulta se realiza en el portal oficial; el índice de sus resultados se aporta
-explícitamente. Es una limitación funcional pendiente, no una prueba superada.
+![Interfaz 0.2.0 comprobada en Linux/QGIS](docs/interfaz-0.2.0-linux.png)
 
-No se fabrican URL de descarga a partir del nombre o del ID `sec`. Puede proporcionar
-un enlace HTTPS de descarga emitido por CNIG en la columna `url`. Se restringen los
-redireccionamientos al mismo dominio oficial. Si requiere sesión, aceptación,
-CAPTCHA u otra autorización, complete esos pasos **en el portal oficial**, descargue
-los archivos y colóquelos en `originales/<sec>/<name>` o directamente en `originales/`.
-El plugin enumera las descargas pendientes y permite continuar con esos originales.
-No pide contraseñas, no extrae cookies ni elude controles del servicio.
+## Comprobaciones y cobertura
 
-La cesta oficial puede requerir su herramienta de descarga masiva. Un cambio publicado
-por CNIG en septiembre de 2026 indica OpenWebStart/Java 17 para nuevos JNLP; siga las
-instrucciones vigentes del portal. El plugin no ejecuta JNLP.
+- Deduplicación por ruta y SHA-256 de contenido: dos copias idénticas se leen una vez.
+  Un LAZ y un LAS del mismo vuelo no son idénticos en bytes: seleccione una sola
+  representación. Los archivos distintos con envolventes solapadas cerca de la parcela
+  se rechazan para no sumar vuelos o niveles NPC silenciosamente.
+- Se seleccionan por sus metadatos todos los archivos próximos al círculo, con margen
+  para terreno y comprobación. Si no hay archivos cercanos, se indica la parcela afectada.
+- Después de convertir, se comprueba **apoyo de retornos reales y de suelo clase 2** en
+  muestras del círculo ampliado en dos celdas MDT. La separación entre muestras es la
+  mitad de **Distancia máxima sin apoyo** (5 m por defecto, muestras cada 2,5 m).
+  Cada muestra debe tener retornos y suelo a esa distancia o menos.
+- Si falta una tesela o hay una zona sin apoyo suficiente, se detiene antes de las
+  métricas, indicando ID, coordenadas y número de muestras sin apoyo. Añada los archivos
+  vecinos y vuelva a ejecutar. Si la causa es baja densidad de suelo, revise los datos;
+  aumentar la distancia relaja el control y puede ocultar huecos.
+- El MDT se calcula con puntos clase 2 de los LAS vecinos. Se comprueba además que no
+  haya NoData en el círculo y su margen de interpolación.
+- `ClipData /shape:1 /dtm:... /height` normaliza el círculo. Se conserva otro recorte
+  con cotas originales y se exige el mismo número de puntos antes y después.
+- `CloudMetrics /new` calcula métricas de todos los retornos normalizados, sin filtros
+  adicionales de altura, clase o primer retorno.
 
-### Índice de teselas
+**Límite de la comprobación:** la envolvente de puntos no equivale a la huella de
+entrega oficial. El apoyo muestreado detecta huecos a la escala configurada, pero no
+prueba ausencia de huecos menores ni completitud de adquisición. El manifiesto identifica
+esa comprobación como `sampled_point_and_class2_support`, nunca como huella oficial
+verificada. Una cabecera LAS tampoco acredita por sí sola pertenencia a PNOA3, año,
+nivel NPC o compatibilidad de datum vertical: compruébelos al descargar desde CNIG.
 
-CSV UTF-8 con estos encabezados:
+## Conversión, caché, resultados y cancelación
 
-```csv
-series,sec,name,epsg,xmin,ymin,xmax,ymax,url,sha256
-```
-
-- `series`: siempre `LIDA3`, verificado en la ficha CNIG.
-- `sec`: identificador numérico de la ficha `detalleArchivo?sec=...`.
-- `name`: nombre exacto del archivo LAS/LAZ, sin rutas.
-- `epsg`: CRS de la nube y de la capa de centros.
-- `xmin,ymin,xmax,ymax`: huella rectangular **oficial**, en metros UTM, no grados.
-- `url`: opcional, enlace de descarga oficial autorizado; déjelo vacío si descarga a mano.
-- `sha256`: opcional, si dispone de una huella de integridad de confianza.
-
-Obtenga las huellas del índice de distribución o de la información espacial de CNIG;
-no deduzca la esquina ni la extensión exclusivamente del nombre. No se incluye un
-índice nacional ni se presentan huellas sintéticas como oficiales. Si no dispone de
-huellas fiables, no use el plugin para afirmar cobertura completa.
-
-Las filas repetidas con el mismo `sec` y metadatos se deduplican; un conflicto se
-rechaza. Si coexisten vuelos, años o niveles NPC sobre la misma zona, elija una sola
-versión de cada tesela antes de ejecutar. Los solapes con superficie positiva dentro
-de las parcelas se rechazan, para evitar duplicar retornos.
-
-El archivo de índice puede contener enlaces de sesión. Manténgalo fuera de repositorios
-públicos. Los registros y la copia de teselas de cada ejecución excluyen esos enlaces.
-
-## Flujo y salidas
-
-1. Valida ID, CRS, radio, archivos FUSION y cobertura por unión de huellas, incluyendo
-   las parcelas en límites y esquinas de cuatro teselas. Un hueco aborta el análisis.
-2. Descarga o reutiliza originales; valida cabeceras, longitud HTTP cuando se proporciona
-   y SHA-256 opcional. Las respuestas HTML de autorización no se aceptan como LAZ.
-3. Convierte con `LDA2LAS` a `LAS/`; comprueba que conserva el número de puntos.
-   Reutiliza una conversión sólo si las huellas SHA-256 del original y del LAS coinciden
-   con su recibo. Los derivados sin recibo se regeneran; los originales se conservan.
-4. Para cada parcela, construye un MDT común con todos los LAS vecinos y **clase 2**.
-   El MDT FUSION se mantiene en formato PLANS y se convierte a ASCII para verificar
-   ausencia de NoData en el círculo y un margen de interpolación.
-5. `ClipData` recorta el círculo y lo normaliza con `/dtm` y `/height`. Conserva además
-   el recorte con cotas originales. Comprueba igual número de puntos antes/después.
-6. `CloudMetrics /new` calcula métricas completas sobre todos los retornos normalizados.
-   No aplica filtros de altura, clase ni primer retorno sin una decisión del usuario.
-7. Exporta CSV y GeoPackage **por ID**, además de archivos conjuntos y un registro.
+La conversión LAZ/LAS usa `LDA2LAS`. Los originales sólo se leen. Cada LAS derivado se
+valida por número de puntos y se asocia a un recibo SHA-256; la siguiente ejecución lo
+reutiliza si original y derivado coinciden. Se comprueba que el original no cambió entre
+la lectura de metadatos y la conversión. Cada ejecución crea su propia carpeta.
 
 ```text
-C:\InventarioLidar\
-  originales\<sec>\<name>        # nunca se modifica ni elimina
-  LAS\<sec>_<nombre>.las         # caché de conversión con recibo SHA-256
-  resultados\<fechaUTC>_<azar>\
-    proceso.log                  # comandos, salida FUSION, errores y cancelación
-    estado.json                  # estado final y asociación ID/directorio
-    teselas.json                 # procedencia sin enlaces temporales
-    descargas_pendientes.json    # cuando procede
-    metricas.csv
-    metricas.gpkg                # centros, una entidad por ID, CRS UTM
-    <hash-del-ID>\
+<carpeta de trabajo>/
+  LAS/<huella>.las y <huella>.json
+  resultados/<fechaUTC>_<azar>/
+    archivos_locales.json      # rutas, envolventes de puntos, CRS, supuestos y hashes
+    teselas.json               # candidatos seleccionados y clase de extensión
+    estado.json / proceso.log
+    metricas.csv / metricas.gpkg
+    <hash-del-ID>/
+      cobertura.json           # método de apoyo muestreado y parámetros
       teselas.txt
       mdt.dtm / mdt.asc
       original.las / normalizada.las
-      cloudmetrics.csv           # salida nativa intacta
+      cloudmetrics.csv
       metricas.csv / metricas.gpkg
 ```
 
-El ID se conserva literalmente como texto, incluidos ceros iniciales. Los directorios
-usan una huella para admitir IDs con caracteres no válidos en Windows; la correspondencia
-está en `estado.json`. Los campos `cm_` conservan las columnas FUSION como texto para
-no perder diagnósticos ni representaciones originales; conviértalos a numérico cuando
-prepare la fase de modelización. El GeoPackage representa centros, no polígonos de parcela.
+CSV y GeoPackage por ID y conjuntos. El GeoPackage contiene centros en el CRS UTM de
+entrada. Los directorios usan un hash para admitir caracteres no válidos en Windows;
+la correspondencia se guarda en `estado.json`. Las columnas `cm_` conservan los valores
+originales FUSION como texto, incluidos diagnósticos. La modelización estadística sigue
+reservada para una segunda fase.
 
-La cobertura de huellas no garantiza densidad uniforme, ausencia de agua, calidad de
-clasificación ni completitud de adquisición. El control del MDT y el recuento detectan
-algunos problemas adicionales, pero no sustituyen una validación científica de datos.
+**Cancelar** detiene el proceso externo activo y registra el estado. La cancelación de
+lectura de nubes y huellas SHA-256 se comprueba por bloques. Al repetir se reutilizan
+conversiones verificadas, no resultados de métricas anteriores.
 
-## Desarrollo y publicación
+## Estado de CNIG y pruebas
+
+Nueva consulta HTTP al catálogo en el entorno de desarrollo: **503**. No se ha podido
+verificar un servicio público de búsqueda espacial/descarga programática. Esta versión
+resuelve el bloqueo del CSV mediante archivos locales; **la descarga sigue haciéndose
+por el portal oficial**, con su autorización cuando sea necesaria. No pide credenciales,
+extrae cookies ni elude controles del servicio.
+
+El motor conserva compatibilidad programática con el índice de 0.1.0 para scripts
+existentes, pero la interfaz ya no lo pide. No necesita conocer `sec` ni rellenar límites.
+
+Pruebas y pendientes detallados en [docs/VALIDACION.md](docs/VALIDACION.md).
+Fuentes y parámetros FUSION en [docs/FUENTES.md](docs/FUENTES.md).
 
 ```sh
 python -m unittest discover -s tests -v
@@ -139,21 +125,16 @@ QT_QPA_PLATFORM=offscreen /usr/bin/python3 -m unittest discover -s tests -v
 python tools/build.py
 ```
 
-El primer comando omite las pruebas QGIS si no está instalado en ese intérprete.
-El segundo usa la instalación QGIS/GDAL del sistema Linux. En Windows use el intérprete
-Python del entorno QGIS/OSGeo4W. Para ejecutar FUSION realmente:
+El primer comando omite las pruebas QGIS si ese intérprete no lo incluye. Para comprobar
+FUSION realmente en Windows, abra el entorno Python QGIS/OSGeo4W y ejecute:
 
 ```powershell
 python tools/windows_smoke.py C:/lidar_smoke_nuevo
 ```
 
-El smoke test genera cuatro teselas artificiales y verifica alturas conocidas de 0 y
-10 m, número de puntos y exportación. Necesita carpeta vacía y FUSION. **No se ha
-ejecutado en Windows durante esta entrega.** No prueba descarga real de CNIG.
+Ese test genera cuatro LAS con CRS y comprueba un círculo sobre su esquina, alturas 0 y
+10 m y exportación, usando directamente la entrada local **sin CSV**. Requiere carpeta
+vacía y FUSION real. **No se ha ejecutado en Windows durante esta entrega.**
 
-La acción GitHub de la rama experimental ejecuta pruebas portables, crea el ZIP y
-publica una prerelease con el activo ZIP y su SHA-256. La prueba QGIS se ejecuta aparte
-en esta entrega; no se sustituye por los tests portables de CI.
-
-Licencia GPL-3.0 del repositorio. Atribuya CNIG conforme a la licencia del producto de
-entrada; registre año y nivel NPC utilizados. Consulte [fuentes y parámetros](docs/FUENTES.md).
+Licencia GPL-3.0 del repositorio. FUSION no se redistribuye. Respete la atribución y
+licencia CNIG de los datos de entrada.

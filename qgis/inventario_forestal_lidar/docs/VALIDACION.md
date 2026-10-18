@@ -1,47 +1,48 @@
-# Validación experimental
+# Validación 0.2.0 experimental
 
-Fecha: 18 de octubre de 2026.
+Fecha: 18 de octubre de 2026. No se afirma validación Windows.
 
-## Ejecutado en Linux
+## Ejecutado
 
-- Escritura y lectura de archivo de comprobación: correctas.
-- Acceso a `dbengoa/otra-prueba`: correcto; conector con permiso `push`.
-- Rama nueva `experimental/inventario-forestal-lidar-0.1.0` creada.
-- 15 pruebas portables: aprobadas con Python estándar.
-- 18 pruebas en total: aprobadas con `/usr/bin/python3`, QGIS **3.40.6-Bratislava**,
-  GDAL y Qt en modo offscreen. Incluyen las 15 anteriores y 3 pruebas QGIS reales:
-  construcción de interfaz, exportación/relectura CSV/GPKG por ID y detección de huecos MDT.
-- Casos de cobertura: círculo entre cuatro teselas, hueco interior, vecinas ausentes,
-  deduplicación y rechazo de niveles solapados.
-- Casos de fallo: ID duplicado, radio inválido, CRS incompatible, HTML en lugar de nube,
-  LAS truncado/vacío, falta de autorización, código de salida no cero y cancelación
-  de proceso hijo. Se comprueban los estados persistidos.
-- Verificación documental de parámetros FUSION y del catálogo CNIG.
-- HTTP real a CNIG: **503, no superado**. No es una descarga probada.
+- 24 pruebas portables aprobadas con Python estándar.
+- 30 pruebas aprobadas con QGIS 3.40.6-Bratislava/GDAL/Numpy en Linux, Qt offscreen:
+  las 24 anteriores y 6 pruebas QGIS/GDAL reales.
+- Interfaz sin campo de índice; selección múltiple sin rutas repetidas, defaults y
+  casilla de asumir CRS desactivada. La apertura del selector nativo Windows no se prueba.
+- Lectura binaria de metadatos LAS 1.2 y 1.4, VLR/EVLR, GeoTIFF, WKT y CRS compuesto;
+  rechazo de WKT/GeoTIFF contradictorios, CRS incompatible, registros truncados,
+  escalas o extensiones inválidas. CRS ausente exige consentimiento explícito.
+- Fixture de cabecera marcada LAZ: lectura de metadatos sin descompresión. **No es
+  un flujo LAZ comprimido real ni acredita compatibilidad del decodificador FUSION.**
+- Deduplicación por contenido de copias con nombres distintos y detección de solapes.
+- Cuatro LAS sintéticos reales con coordenadas y suelo: apoyo muestreado correcto;
+  falta una tesela: error; sólo vegetación y ningún suelo: error.
+- Flujo del motor sin `index` ni CSV, usando cuatro LAS y rutas fuente con espacios.
+  **FUSION sustituido por un fake** que produce salidas de prueba. Se comprueban los
+  comandos encadenados, QGIS/GDAL real, exportaciones, manifiestos, originales intactos
+  y segunda ejecución sin repetir conversiones. No acredita los cálculos FUSION.
+- Pruebas heredadas de error, cancelación, cabecera, cobertura oficial declarada,
+  autorización del adaptador antiguo y CSV/GPKG por ID siguen aprobadas.
+- Nueva consulta HTTP real CNIG: 503. La descarga no está validada.
 
-Los comandos se guardan en `tests-linux.txt` en la distribución de esta entrega.
-Las pruebas unitarias de parámetros comprueban la construcción de argumentos, no la
-respuesta de ejecutables FUSION. Los LAS de esas pruebas son fixtures estructurales.
+Salida completa en `tests-linux.txt`. La CI ejecuta sólo las 24 portables y omite
+explícitamente las 6 pruebas que dependen del entorno QGIS.
 
 ## Pendiente en Windows
 
-- Instalar el ZIP desde QGIS y comprobar carga/descarga del complemento.
-- Ejecutar `tools/windows_smoke.py` con FUSION 4.61 para verificar cuatro teselas,
-  clase 2, MDT, círculo, alturas 0/10 m, número de puntos y CSV/GPKG.
-- LAZ PNOA3 real (LAS 1.4, RGBI y niveles NPC utilizados) con las bibliotecas de FUSION.
-- Un ID dentro de una tesela, uno en límite y uno en esquina de cuatro teselas.
-- Descarga CNIG real: sin autorización, sesión/aceptación cuando proceda, enlace
-  caducado, error HTTP y reconexión. Comprobar integración manual oficial.
-- Cancelar durante descarga, conversión y cálculo; comprobar `taskkill /T`, registros,
-  originales intactos y reanudación. La cancelación de procesos se probó sólo en Linux.
-- Ejecutar dos veces y verificar reutilización SHA-256; cambiar un original y confirmar
-  que se invalida su conversión, sin reutilizar métricas anteriores.
-- Probar permisos de carpetas, Unicode, falta de disco y volúmenes de tamaño real.
+1. Instalar el ZIP 0.2.0, reiniciar QGIS y comprobar el selector de archivos/carpeta.
+2. Ejecutar `tools/windows_smoke.py` con FUSION 4.61: cuatro LAS con CRS, círculo en
+   esquina, terreno de 100 m, alturas 0/10 m y exportaciones. El script ya usa la nueva
+   entrada local sin índice CSV.
+3. LAZ PNOA3 real (LAS 1.4 RGBI): metadatos CRS, conversión y control de apoyo. Revisar
+   año, NPC y datum vertical en la fuente oficial; no se infieren de la cabecera.
+4. Parcelas dentro de una tesela, en un borde y en esquina de cuatro teselas.
+5. Cancelación durante lectura, conversión y cálculo; `taskkill /T` y originales intactos.
+6. Unicode, falta de espacio/permisos, lotes grandes, biblioteca LAZ de FUSION y
+   recuperación tras una ejecución interrumpida.
+7. Autorización y descarga CNIG en el portal real. La búsqueda espacial y descarga
+   programática en línea siguen pendientes de un contrato oficial verificable.
 
-## Pendiente funcional conocida
-
-La búsqueda espacial y descubrimiento automático de teselas a partir sólo de los
-centros **no están implementados** sin un índice explícito. Se necesita verificar el
-servicio/contrato oficial antes de añadir un adaptador. Esta entrega es utilizable
-experimentalmente con índice fiable y originales descargados por vía oficial, pero
-no debe presentarse como una automatización CNIG completa ni como validación Windows.
+La comprobación local de apoyo tiene una escala configurable; no puede certificar
+completitud de adquisición ni detectar huecos más pequeños que esa escala. Los límites
+de cabecera son envolventes de puntos, no huellas oficiales de entrega.

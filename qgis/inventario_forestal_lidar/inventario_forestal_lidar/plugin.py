@@ -3,7 +3,7 @@ import os
 import webbrowser
 from qgis.PyQt.QtCore import Qt, pyqtSignal, QVariant
 from qgis.PyQt.QtWidgets import (QAction,QDialog,QVBoxLayout,QFormLayout,QLineEdit,
-    QDoubleSpinBox,QPushButton,QFileDialog,QProgressBar,QPlainTextEdit,QMessageBox,QHBoxLayout,QLabel)
+    QDoubleSpinBox,QPushButton,QFileDialog,QProgressBar,QPlainTextEdit,QMessageBox,QHBoxLayout,QLabel,QCheckBox)
 from qgis.core import QgsApplication,QgsTask,QgsWkbTypes,QgsVectorLayer,QgsProject,NULL,QgsMapLayerProxyModel
 from qgis.gui import QgsMapLayerComboBox,QgsFieldComboBox
 from .core import Plot, CATALOG, validate
@@ -42,7 +42,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.1.0')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.2.0')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -60,17 +60,26 @@ class Dialog(QDialog):
         self.cell.setRange(.1,20)
         self.cell.setValue(1)
         self.output = QLineEdit()
-        self.index = QLineEdit()
+        self.files = []
+        self.files_summary = QLineEdit('Ningún archivo seleccionado')
+        self.files_summary.setReadOnly(True)
+        self.assume_crs = QCheckBox('Asumir CRS de parcelas sólo en archivos sin CRS (lo he comprobado)')
+        self.support = QDoubleSpinBox()
+        self.support.setRange(.5,20)
+        self.support.setValue(5)
+        self.support.setSuffix(' m')
         self.fusion = QLineEdit('C:\\FUSION')
         form.addRow('Centros de parcelas',self.layer)
         form.addRow('ID único (se conserva como texto)',self.field)
         form.addRow('Radio',self.radius)
         form.addRow('Celda MDT (m)',self.cell)
         form.addRow('Carpeta sin espacios',self.path_row(self.output,False))
-        form.addRow('Índice oficial CNIG (CSV)',self.path_row(self.index,True))
+        form.addRow('LAZ/LAS descargados',self.sources_row())
+        form.addRow('',self.assume_crs)
+        form.addRow('Distancia máxima sin apoyo',self.support)
         form.addRow('FUSION',self.fusion)
         outer.addLayout(form)
-        outer.addWidget(QLabel('El índice debe incluir todas las teselas vecinas. Si CNIG exige autorización,\ncomplete la descarga en su portal y pulse Ejecutar de nuevo. Consulte README.'))
+        outer.addWidget(QLabel('Seleccione los LAZ/LAS de CNIG, incluidas las teselas vecinas. No necesita CSV.\nSe leen metadatos y se comprueba apoyo de puntos y suelo. La descarga/autorización\nse completa en el portal oficial; la cabecera no acredita la cobertura PNOA3.'))
         buttons = QHBoxLayout()
         self.catalog = QPushButton('Consultar PNOA3 en CNIG')
         self.catalog.clicked.connect(lambda:webbrowser.open(CATALOG))
@@ -87,6 +96,40 @@ class Dialog(QDialog):
         self.messages = QPlainTextEdit()
         self.messages.setReadOnly(True)
         outer.addWidget(self.messages)
+
+    def sources_row(self):
+        from qgis.PyQt.QtWidgets import QWidget
+        box = QWidget()
+        layout = QHBoxLayout(box)
+        layout.setContentsMargins(0,0,0,0)
+        layout.addWidget(self.files_summary)
+        files = QPushButton('Archivos…')
+        folder = QPushButton('Carpeta…')
+        clear = QPushButton('Vaciar')
+        files.clicked.connect(self.choose_files)
+        folder.clicked.connect(self.choose_folder)
+        clear.clicked.connect(lambda:self.set_sources([]))
+        for button in (files,folder,clear):
+            layout.addWidget(button)
+        return box
+
+    def set_sources(self,paths):
+        self.files = sorted({str(Path(p).resolve()) for p in paths})
+        self.files_summary.setText(str(len(self.files))+' archivos LAZ/LAS seleccionados')
+        self.files_summary.setToolTip('\n'.join(self.files))
+
+    def choose_files(self):
+        paths,_ = QFileDialog.getOpenFileNames(self,'LAZ/LAS descargados de CNIG','','Nubes LiDAR (*.laz *.las *.LAZ *.LAS)')
+        if paths:
+            self.set_sources(self.files+paths)
+
+    def choose_folder(self):
+        folder = QFileDialog.getExistingDirectory(self,'Carpeta de originales LAZ/LAS')
+        if folder:
+            # Do not accidentally add our own converted or normalized derivatives.
+            paths = [str(p) for p in Path(folder).rglob('*') if p.is_file() and p.suffix.lower() in ('.las','.laz')
+                     and not any(part.lower() in ('resultados','las') for part in p.relative_to(folder).parts[:-1])]
+            self.set_sources(self.files+paths)
 
     def path_row(self,edit,file):
         from qgis.PyQt.QtWidgets import QWidget
@@ -125,10 +168,10 @@ class Dialog(QDialog):
             if not output or not Path(output).is_absolute():
                 raise ValueError('Seleccione una carpeta absoluta de trabajo')
             validate(plots,self.radius.value(),output)
-            index = Path(self.index.text())
-            if not index.is_file():
-                raise ValueError('Falta índice CSV CNIG; consulte instrucciones')
-            config = {'output':output,'index':str(index),'fusion':self.fusion.text(),
+            if not self.files:
+                raise ValueError('Seleccione archivos LAZ/LAS descargados de CNIG')
+            config = {'output':output,'files':list(self.files),'assume_missing_crs':self.assume_crs.isChecked(),
+                      'support_distance':self.support.value(),'fusion':self.fusion.text(),
                       'epsg':int(layer.crs().authid().split(':')[1]),'radius':self.radius.value(),'cell':self.cell.value()}
             self.job = Job(config,plots)
             self.job.status.connect(self.status)

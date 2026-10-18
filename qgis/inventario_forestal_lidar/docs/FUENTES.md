@@ -40,3 +40,14 @@ entorno de desarrollo. Se contrastó el contenido oficial mediante consulta web.
 No se ha validado búsqueda espacial programática, descarga binaria, autorización
 real, ni un contrato de API de CNIG. La versión utiliza consulta oficial en navegador,
 índice explícito y enlaces autorizados o descargas oficiales manuales.
+
+## Cambio 0.2.0: metadatos locales
+
+Se contrastó la representación CRS con la especificación ASPRS LAS: GeoTIFF en
+`LASF_Projection`/34735 y WKT en 2112, incluidos registros extendidos. Referencias
+primarias: [documentos ASPRS](https://community.asprs.org/leadership-restricted/leadership-content/public-documents/standards)
+y [representación WKT en LAS](https://asprslas.org/latest/03_crs.html).
+El lector de esta versión admite LAS 1.0–1.4; no anuncia soporte LAS 1.5.
+
+El catálogo CNIG volvió a responder HTTP 503. La nueva interfaz usa exclusivamente
+archivos locales; ya no necesita un índice ni identificadores `sec`.
