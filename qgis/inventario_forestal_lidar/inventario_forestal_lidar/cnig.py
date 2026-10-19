@@ -60,10 +60,10 @@ def parse_page(text):
 
 def rank_name(name):
     # Used to compare editions of a returned tile, never to invent its footprint.
-    m=re.fullmatch(r'PNOA[-_](\d{4})[-_].+?[-_](\d{3})[-_](\d{4})[-_]H(\d{2})[-_]NPC(\d{2})(\+?)\.LAZ',name,re.I)
+    m=re.fullmatch(r'PNOA[-_](\d{4})[-_].+?[-_](\d{3})[-_](\d{4})(?:[-_]H(\d{2}))?[-_]NPC(\d{2})(\+?)\.LAZ',name,re.I)
     if not m:raise CatalogError('Nomenclatura PNOA3 no reconocida: '+name)
     year,x,y,zone,npc,plus=m.groups()
-    return (int(x),int(y),int(zone)),(int(year),int(npc),bool(plus))
+    return (int(x),int(y),int(zone) if zone else None),(int(year),int(npc),bool(plus))
 
 
 def prefer_versions(records,epsg):
@@ -71,9 +71,12 @@ def prefer_versions(records,epsg):
     groups={};excluded=[]
     for r in records:
         key,rank=rank_name(r['name'])
-        if key[2]!=zone:
+        if key[2] is not None and key[2]!=zone:
             excluded.append({**r,'reason':'different_utm_zone'});continue
-        groups.setdefault(key,[]).append((rank,r))
+        # Missing Hxx is not a CRS declaration. Group editions in this query;
+        # official geometry and downloaded CRS remain mandatory checks.
+        group_key=(key[0],key[1],zone)
+        groups.setdefault(group_key,[]).append((rank,r))
     chosen=[]
     for group in groups.values():
         best=max(rank for rank,r in group)

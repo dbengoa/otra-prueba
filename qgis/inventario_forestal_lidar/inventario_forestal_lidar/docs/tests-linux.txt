@@ -1,5 +1,10 @@
 QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-agent'
 QFSFileEngine::open: No file name specified
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
+Could not create AF_NETLINK socket (Operation not permitted)
 test_acquire_download_and_resume_without_browser (test_auto_qgis.AutomaticTests.test_acquire_download_and_resume_without_browser) ... /usr/lib/python3/dist-packages/osgeo/osr.py:410: FutureWarning: Neither osr.UseExceptions() nor osr.DontUseExceptions() has been explicitly called. In GDAL 4.0, exceptions will be enabled by default.
   warnings.warn(
 ok
@@ -8,14 +13,16 @@ test_auto_engine_needs_no_user_files_or_index (test_auto_qgis.AutomaticTests.tes
 ok
 test_query_axis_order_and_official_coverage_at_four_tile_corner (test_auto_qgis.AutomaticTests.test_query_axis_order_and_official_coverage_at_four_tile_corner) ... ok
 test_real_official_footprint_reprojection (test_auto_qgis.AutomaticTests.test_real_official_footprint_reprojection) ... ok
-test_browser_cancellation_closes_dedicated_instance (test_browser.BrowserTests.test_browser_cancellation_closes_dedicated_instance) ... ok
-test_browser_rejects_unexpected_filename (test_browser.BrowserTests.test_browser_rejects_unexpected_filename) ... ok
-test_browser_waits_for_approval_then_downloads (test_browser.BrowserTests.test_browser_waits_for_approval_then_downloads) ... ok
+test_browser_cancellation_closes_dedicated_instance (test_browser.BrowserTests.test_browser_cancellation_closes_dedicated_instance) ... skipped 'Navegador real: active LIDAR_BROWSER_TEST_EXE para test local CDP'
+test_browser_rejects_unexpected_filename (test_browser.BrowserTests.test_browser_rejects_unexpected_filename) ... skipped 'Navegador real: active LIDAR_BROWSER_TEST_EXE para test local CDP'
+test_browser_waits_for_approval_then_downloads (test_browser.BrowserTests.test_browser_waits_for_approval_then_downloads) ... skipped 'Navegador real: active LIDAR_BROWSER_TEST_EXE para test local CDP'
 test_actual_official_response (test_cnig.CatalogTests.test_actual_official_response) ... ok
 test_cancel_before_network (test_cnig.CatalogTests.test_cancel_before_network) ... ok
 test_empty_is_distinct_from_broken_response (test_cnig.CatalogTests.test_empty_is_distinct_from_broken_response) ... ok
 test_footprint_response_contract (test_cnig.CatalogTests.test_footprint_response_contract) ... ok
+test_missing_zone_does_not_override_known_mismatch_or_editions (test_cnig.CatalogTests.test_missing_zone_does_not_override_known_mismatch_or_editions) ... ok
 test_pagination_and_duplicate_ids (test_cnig.CatalogTests.test_pagination_and_duplicate_ids) ... ok
+test_pnr_filename_without_zone_reported_on_windows (test_cnig.CatalogTests.test_pnr_filename_without_zone_reported_on_windows) ... ok
 test_row_pairing_not_parallel_arrays (test_cnig.CatalogTests.test_row_pairing_not_parallel_arrays) ... ok
 test_version_policy (test_cnig.CatalogTests.test_version_policy) ... ok
 test_cancel_before_download (test_core.CoreTests.test_cancel_before_download) ... ok
@@ -50,7 +57,7 @@ test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_comple
 test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... ok
 
 ----------------------------------------------------------------------
-Ran 44 tests in 11.224s
+Ran 46 tests in 1.120s
 
-OK
+OK (skipped=3)
 QGIS probado: 3.40.6-Bratislava

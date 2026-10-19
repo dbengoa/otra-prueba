@@ -71,3 +71,10 @@ la longitud de la línea de comandos. El ejecutable real Windows sigue pendiente
 y [representación CRS WKT](https://asprslas.org/latest/03_crs.html). El lector admite
 LAS 1.0–1.4 y VLR/EVLR de GeoTIFF/WKT; no anuncia LAS 1.5. Las cabeceras no sustituyen
 la comprobación de huellas oficiales ni de apoyo de puntos reales.
+
+## Verificación de la corrección 0.3.1 — 19 de octubre de 2026
+
+Consulta real de sólo lectura en EPSG:25830 `(523500,4653500)`: CNIG devolvió
+`PNOA-2024-PNR-523-4654-NPC01.laz`. El adaptador corregido lo aceptó, obtuvo la huella
+oficial y confirmó cobertura del círculo. Evidencia: live-cnig-pnr-plan.json y
+live-cnig-pnr-coverage.json. No se descargó LAZ ni se ejecutó FUSION en esta consulta.

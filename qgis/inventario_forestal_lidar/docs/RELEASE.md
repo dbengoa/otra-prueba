@@ -1,21 +1,13 @@
-0.3.0 experimental: **descarga automática CNIG desde la capa de parcelas**.
+0.3.1 experimental: corrige el bloqueo «Nomenclatura PNOA3 no reconocida».
 
-La interfaz ya no pide CSV ni archivos LAZ/LAS. Consulta espacialmente LIDA3, pagina y
-deduplica resultados, obtiene huellas oficiales y comprueba cobertura. Descarga mediante
-el botón real del portal en una ventana independiente de Edge/Chrome, respetando su
-reCAPTCHA, preautorización y licencia. El usuario sólo interviene si CNIG lo requiere.
-El plugin recoge los originales y continúa con conversión LAS, MDT clase 2, ClipData,
-CloudMetrics y CSV/GeoPackage por ID. Conserva y reutiliza archivos verificados.
+Admite `PNOA-2024-PNR-523-4654-NPC01.laz` y otras variantes sin Hxx. El huso ausente
+no se usa como CRS: permanecen las comprobaciones de huellas oficiales y del CRS leído
+del archivo. Se conserva la selección de año/NPC y el rechazo de husos explícitos
+incompatibles.
 
-Instale el ZIP sin descomprimir y reinicie QGIS. Requiere QGIS 3.34+, Windows,
-FUSION 4.61 en C:\FUSION y Edge o Chrome. Sin modelización estadística.
+Instale el ZIP sin descomprimir y reinicie QGIS. Mantiene el flujo automático CNIG →
+LAZ → LAS → FUSION → métricas, sin CSV ni selección de archivos.
 
-**Verificado:** consulta CNIG real HTTP 200 y huellas de cuatro teselas en una esquina;
-44 pruebas Linux/QGIS/Chromium aprobadas. El navegador se probó contra un servidor
-local con aprobación simulada, y la integración del motor sustituye FUSION por fixtures.
-**Pendiente:** autorización/descarga CNIG real y FUSION de extremo a extremo en Windows.
-No se presenta la prueba local como validación del reCAPTCHA o LAZ real.
-
-La descarga depende de autorización CNIG y de un protocolo web sin contrato estable.
-El plugin no elude ese control ni cambia el flujo por carga manual. Detalles en README,
-docs/FUENTES.md y docs/VALIDACION.md.
+43 pruebas Linux/QGIS aprobadas; 3 de navegador omitidas porque su código no cambia.
+Las pruebas de navegador de 0.3.0 se realizaron contra un servidor local. Sigue pendiente
+validar autorización/descarga y FUSION de extremo a extremo en Windows.

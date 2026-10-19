@@ -1,7 +1,7 @@
 [general]
 name=Inventario forestal LiDAR
 description=PNOA tercera cobertura y métricas por parcela con FUSION para Windows
-version=0.3.0
+version=0.3.1
 qgisMinimumVersion=3.34
 author=dbengoa
 email=

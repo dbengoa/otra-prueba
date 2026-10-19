@@ -9,7 +9,9 @@ test_actual_official_response (test_cnig.CatalogTests.test_actual_official_respo
 test_cancel_before_network (test_cnig.CatalogTests.test_cancel_before_network) ... ok
 test_empty_is_distinct_from_broken_response (test_cnig.CatalogTests.test_empty_is_distinct_from_broken_response) ... ok
 test_footprint_response_contract (test_cnig.CatalogTests.test_footprint_response_contract) ... ok
+test_missing_zone_does_not_override_known_mismatch_or_editions (test_cnig.CatalogTests.test_missing_zone_does_not_override_known_mismatch_or_editions) ... ok
 test_pagination_and_duplicate_ids (test_cnig.CatalogTests.test_pagination_and_duplicate_ids) ... ok
+test_pnr_filename_without_zone_reported_on_windows (test_cnig.CatalogTests.test_pnr_filename_without_zone_reported_on_windows) ... ok
 test_row_pairing_not_parallel_arrays (test_cnig.CatalogTests.test_row_pairing_not_parallel_arrays) ... ok
 test_version_policy (test_cnig.CatalogTests.test_version_policy) ... ok
 test_cancel_before_download (test_core.CoreTests.test_cancel_before_download) ... ok
@@ -44,6 +46,6 @@ test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_comple
 test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... skipped 'QGIS/GDAL no disponibles en este intérprete'
 
 ----------------------------------------------------------------------
-Ran 44 tests in 0.537s
+Ran 46 tests in 0.509s
 
 OK (skipped=13)

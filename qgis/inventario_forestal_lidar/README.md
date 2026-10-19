@@ -1,8 +1,15 @@
-# Inventario forestal LiDAR — 0.3.0 experimental
+# Inventario forestal LiDAR — 0.3.1 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
+
+## Corrección 0.3.1
+
+Admite nombres sin huso, como `PNOA-2024-PNR-523-4654-NPC01.laz`. La ausencia de
+`Hxx` no declara ningún CRS: se mantienen las comprobaciones de huella oficial y
+metadatos del LAZ. Las variantes con/sin huso se comparan como ediciones de la misma
+tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 
 ## Instalación / actualización
 
@@ -11,10 +18,10 @@ seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fa
 3. Tenga instalado Microsoft Edge o Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.3.0-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.3.1-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.3.0**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.3.1**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 
@@ -121,8 +128,9 @@ recalcula métricas y reutiliza las conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado:** 44 pruebas en Linux/QGIS 3.40.6, incluidas 3 con Chromium real contra un
-servidor de prueba local. Consulta CNIG real HTTP 200: cuatro teselas en una esquina,
+**Ejecutado en 0.3.1:** 43 pruebas aprobadas en Linux/QGIS 3.40.6 y 3 ensayos de navegador
+omitidos. Se añaden dos regresiones para nombres sin huso. Las 3 pruebas de Chromium
+real contra servidor local se ejecutaron en 0.3.0 y no se repitieron para este cambio. Consulta CNIG real HTTP 200: cuatro teselas en una esquina,
 huellas oficiales y cobertura verificadas. Véanse [VALIDACION](docs/VALIDACION.md) y
 [FUENTES](docs/FUENTES.md).
 
@@ -144,8 +152,8 @@ LIDAR_BROWSER_TEST_EXE=/ruta/chromium QT_QPA_PLATFORM=offscreen /usr/bin/python3
 python tools/build.py
 ```
 
-Con Python sin QGIS se ejecutan 31 pruebas y se omiten 13 de integración; con QGIS,
-41 y 3 omitidas; con navegador configurado, las 44. Los tests del navegador son sólo
+Con Python sin QGIS se ejecutan 33 pruebas y se omiten 13 de integración; con QGIS,
+43 y 3 omitidas; con navegador configurado, las 46. Los tests del navegador son sólo
 locales, no intentan superar un CAPTCHA oficial. El ZIP es determinista e incluye SHA-256.
 La CI ejecuta las pruebas portables y publica la prerelease con el ZIP correspondiente.
 

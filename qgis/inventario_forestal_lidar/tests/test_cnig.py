@@ -59,6 +59,25 @@ class CatalogTests(unittest.TestCase):
             prefer_versions([rows[2],dict(rows[2],sec='999')],25829)
         with self.assertRaises(CatalogError):rank_name('arbitrary.laz')
 
+    def test_pnr_filename_without_zone_reported_on_windows(self):
+        name='PNOA-2024-PNR-523-4654-NPC01.laz'
+        key,rank=rank_name(name)
+        self.assertEqual(key,(523,4654,None))
+        self.assertEqual(rank,(2024,1,False))
+        rows,total=parse_page(page([('123',name)]))
+        selected,excluded=prefer_versions(rows,25830)
+        self.assertEqual(selected[0]['name'],name)
+        self.assertEqual(excluded,[])
+
+    def test_missing_zone_does_not_override_known_mismatch_or_editions(self):
+        rows=[dict(sec='1',name='PNOA-2024-PNR-523-4654-NPC01.laz'),
+              dict(sec='2',name='PNOA_2024_PNR_523-4654_H30_NPC02.LAZ'),
+              dict(sec='3',name='PNOA-2024-PNR-523-4654-H29-NPC03.LAZ')]
+        selected,excluded=prefer_versions(rows,25830)
+        self.assertEqual([r['sec'] for r in selected],['2'])
+        self.assertEqual({r['reason'] for r in excluded},{'different_utm_zone','older_flight_or_lower_npc'})
+        with self.assertRaises(CatalogError):rank_name('PNOA-2024-PNR-523-4654-NPC01.laz/evil')
+
     def test_footprint_response_contract(self):
         c=Client()
         raw=(DATA/'cnig-footprint-real.json').read_text()

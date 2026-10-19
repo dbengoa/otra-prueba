@@ -44,7 +44,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.3.0')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.3.1')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
