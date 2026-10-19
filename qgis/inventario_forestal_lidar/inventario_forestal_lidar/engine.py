@@ -15,7 +15,7 @@ import traceback
 from .fusion import PROGRAMS, program, invocation, failure_message
 from .storage import StateStorageError, diagnostic_root
 from .core import (Cancelled, AuthorizationRequired, DETAIL, VERSION, token,
-                   validate, read_index, select_tiles, las_header, digest, commands, atomic_json, validate_height_cutoff, metrics_row)
+                   validate, read_index, select_tiles, las_header, digest, commands, atomic_json, validate_height_cutoff, metrics_row, terrain_clip_command)
 
 
 def official_url(url):
@@ -341,7 +341,17 @@ class Engine:
             listing = work/'teselas.txt'
             listing.write_text('\n'.join(str(paths[t.sec]) for t in mapping[p.id])+'\n',encoding='utf-8')
             terrain, raw, normalized, metrics = [work/n for n in ('mdt.dtm','original.las','normalizada.las','cloudmetrics.csv')]
-            cmd = commands(fusion,'','',listing,terrain,raw,normalized,metrics,p,self.c['radius'],zone,self.c['cell'],self.c.get('height_cutoff'))
+            # GridSurfaceCreate previously read complete neighboring tiles directly.
+            # Feed one bounded LAS, retaining classes and original Z for the MDT.
+            terrain_input = work/'entorno_mdt.las'
+            self.phase('ClipData: entorno conjunto para MDT',p.id)
+            self.run_command(terrain_clip_command(fusion,listing,terrain_input,p,self.c['radius'],self.c['cell'],self.c.get('support_distance',5.)))
+            terrain_input_count = las_header(terrain_input)
+            atomic_json(work/'entorno_mdt.json',{'source_tiles':[str(paths[t.sec]) for t in mapping[p.id]],
+                'points':terrain_input_count,'margin_m':2*self.c['cell']+self.c.get('support_distance',5.),
+                'original_elevations':True,'height_filter_applied':False})
+            self.log('MDT ENTRADA ÚNICA ID='+p.id+' teselas='+str(len(mapping[p.id]))+' puntos='+str(terrain_input_count))
+            cmd = commands(fusion,'','',terrain_input,terrain,raw,normalized,metrics,p,self.c['radius'],zone,self.c['cell'],self.c.get('height_cutoff'))
             self.phase('MDT clase 2',p.id)
             self.run_command(cmd['terrain'])
             if not terrain.is_file() or not terrain.stat().st_size:

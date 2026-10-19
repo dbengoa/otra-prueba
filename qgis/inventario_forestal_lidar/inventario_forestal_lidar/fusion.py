@@ -39,6 +39,8 @@ def failure_message(executable,code):
     status=code & 0xffffffff
     if status==0xc0000005:
         message+=' (0xC0000005: acceso no válido a memoria; fallo del ejecutable o de una DLL; no identifica por sí solo la causa)'
+    elif status == 0xc0000409:
+        message+=' (0xC0000409: terminación de seguridad/fail-fast del ejecutable; el código por sí solo no identifica la causa)'
     elif status in (0xc0000135,0xc000007b):
         message+=' ('+format(status,'#010x')+': dependencia DLL ausente o arquitectura incompatible)'
     return message

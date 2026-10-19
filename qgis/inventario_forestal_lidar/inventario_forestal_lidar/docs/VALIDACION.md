@@ -96,3 +96,14 @@ No se ejecutó FUSION real ni CloudMetrics.exe en Linux. Pendiente: instalación
 flujo real en Windows, y comprobar los estadísticos numéricos filtrados con FUSION
 4.61 sobre datos reales. El manual oficial 4.61 respalda /minht; /above no sustituye
 el filtrado de las estadísticas.
+
+
+## 0.4.4 — entorno de MDT (19-10-2026)
+
+94 pruebas aprobadas con QGIS 3.40.6 en Linux. Nuevas pruebas de geometría de
+recorte con margen, entrada única para MDT, conservación de /class:2 y diagnóstico
+0xC0000409. Flujos con FUSION simulado comprueban que el listado incluye cuatro
+vecinas y que MDT/normalización consumen entorno_mdt.las. Estas pruebas verifican
+orquestación y parámetros; no ejecutan los binarios FUSION ni demuestran su
+comportamiento real con los datos que provocaron el cierre. Pendiente en Windows:
+prueba real de ClipData con varias entradas, MDT, normalización y CloudMetrics.

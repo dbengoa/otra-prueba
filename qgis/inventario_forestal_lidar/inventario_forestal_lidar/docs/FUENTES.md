@@ -116,3 +116,5 @@ servidor un comportamiento comprobado sólo en fixtures. No se publica el regist
 
 
 0.4.3: manual oficial 4.61 consultado para CloudMetrics /minht:# (retornos sobre el corte en datos normalizados); /above:# calcula ratios de cobertura. Se usa /minht y se mantiene /class:2 en GridSurfaceCreate.
+
+0.4.4: verificado ClipData /shape:0 (rectángulo) y /shape:1 (círculo), manual oficial FUSION 4.61, páginas impresas 43–47. El entorno se recorta sin /height ni filtro de clase/altura y se entrega a GridSurfaceCreate con /class:2.

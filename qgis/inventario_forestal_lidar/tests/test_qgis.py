@@ -80,7 +80,7 @@ class QgisTests(unittest.TestCase):
         self.assertFalse(dialog.auth_button.isEnabled())
         self.assertEqual(dialog.auth_button.text(),'Volver a abrir ficha')
         self.assertTrue(Path(dialog.download_directory.text()).is_absolute())
-        self.assertIn('0.4.3',dialog.windowTitle())
+        self.assertIn('0.4.4',dialog.windowTitle())
         dialog.close()
 
     def test_wkt_crs_and_compound(self):
@@ -166,7 +166,7 @@ class QgisTests(unittest.TestCase):
             from inventario_forestal_lidar.fusion import failure_message
             failed=Engine(config,[Plot('001',400000,4600000)])
             def fail_clip(args):
-                if Path(args[0]).stem=='ClipData':raise RuntimeError(failure_message(args[0],3221225477))
+                if Path(args[0]).stem=='ClipData' and '/shape:1' in args:raise RuntimeError(failure_message(args[0],3221225477))
                 return fake_fusion(args)
             with patch.object(Engine,'run_command',side_effect=fail_clip):
                 with self.assertRaisesRegex(RuntimeError,'ClipData: recorte circular.*0xC0000005'):failed.execute()

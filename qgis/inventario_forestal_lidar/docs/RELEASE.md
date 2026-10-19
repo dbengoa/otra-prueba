@@ -1,16 +1,11 @@
-0.4.3 experimental: altura de corte configurable para métricas LiDAR.
+0.4.4 experimental: MDT desde una única nube recortada con margen.
 
-Casilla para activar/desactivar el filtro; corte inicial 2 m. CloudMetrics usa
-/minht:h sobre la nube normalizada. MDT sigue usando clase 2. Se conservan todos
-los puntos en LAZ, LAS y normalizada.las. CSV y GeoPackage registran altura de
-corte, tipo de filtro y retornos usados; las métricas mantienen nombres cm_.
-Se valida el recuento filtrado y se informa del ID si no quedan retornos.
+ClipData combina el entorno de la parcela de todas las teselas seleccionadas;
+GridSurfaceCreate usa ese LAS con /class:2. Se conservan las comprobaciones de
+cobertura, apoyo y huecos del MDT. Corte configurable de altura conservado.
+Originales y LAS no se modifican; los resultados se guardan en una nueva ejecución.
+Añadido diagnóstico del cierre nativo 0xC0000409 sin atribuirle una causa no probada.
 
-Instalar ZIP y reiniciar QGIS. Reutilizar la misma carpeta y LAZ/LAS para generar
-nuevos resultados homogéneos con el corte elegido. No mezclar filtros al modelizar.
-
-Ejecutado: 90 pruebas Linux/QGIS 3.40.6, incluidas 6 nuevas pruebas portables del
-corte, controles de interfaz y flujo con FUSION simulado + exportación CSV/GPKG.
-Pendiente: ejecución real de CloudMetrics /minht y flujo completo en Windows.
-La publicación automática comprueba almacenamiento y filtro con Python de Windows;
-esas pruebas no ejecutan FUSION ni sustituyen la comprobación real en ese equipo.
+94 pruebas Linux/QGIS 3.40.6 aprobadas. FUSION simulado en las pruebas de flujo;
+pendiente ejecutar FUSION real en Windows y reproducir el caso del usuario.
+No se garantiza que el cambio resuelva todo cierre nativo ni todo fallo de red.

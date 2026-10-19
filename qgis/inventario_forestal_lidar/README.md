@@ -1,8 +1,32 @@
-# Inventario forestal LiDAR — 0.4.3 experimental
+# Inventario forestal LiDAR — 0.4.4 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
+
+## Novedad 0.4.4: MDT desde un entorno recortado conjunto
+
+GridSurfaceCreate recibe ahora una única nube `entorno_mdt.las`, creada con
+ClipData /shape:0 a partir de TODAS las teselas seleccionadas para la parcela.
+El margen por lado es 2 × celda MDT + distancia máxima sin apoyo (7 m con valores
+predeterminados). Se conserva la cota absoluta y la clasificación de los puntos.
+GridSurfaceCreate sigue usando /class:2. El recorte circular y la normalización
+usan también el entorno, evitando releer las teselas completas en cada fase.
+
+Se conservan las comprobaciones de apoyo de puntos y de suelo, cobertura CNIG,
+y ausencia de huecos del MDT en el círculo y su halo. No se rellena un MDT inválido
+ni se descarta la tesela vecina de una parcela entre teselas. `entorno_mdt.json`
+registra las entradas, margen y recuento. Se conserva el corte configurable de 0.4.3.
+
+Motivo: cierre de GridSurfaceCreate64 con 0xC0000409 durante la lectura directa de
+una lista de dos teselas completas. No se ha confirmado la causa interna. Este
+cambio evita esa entrada y reduce el tamaño del cálculo; no garantiza resolver
+cualquier fallo del ejecutable o de una unidad de red. Si persiste, conserve
+proceso.log, fusion.log y entorno_mdt.json para el diagnóstico.
+
+Instale el ZIP 0.4.4 y reinicie QGIS. Reutilice la misma carpeta sin borrar originales
+ni LAS. Obtendrá una nueva carpeta de resultados. Pendiente: probar FUSION real
+en Windows con el caso que produjo el cierre.
 
 ## Novedad 0.4.3: altura de corte configurable
 
@@ -149,10 +173,10 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.4.3-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.4.4-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.4.3**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.4.4**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 

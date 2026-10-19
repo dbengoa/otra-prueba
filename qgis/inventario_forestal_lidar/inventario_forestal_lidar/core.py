@@ -10,7 +10,7 @@ import struct
 
 CATALOG = 'https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3'
 DETAIL = 'https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec='
-VERSION = '0.4.3-experimental'
+VERSION = '0.4.4-experimental'
 
 class Cancelled(Exception):
     pass
@@ -209,3 +209,17 @@ def metrics_row(plot, radius, total_count, result, height_cutoff=None):
             'altura_corte_m':cutoff if cutoff is not None else '',
             'filtro_altura':'mayor_que' if cutoff is not None else 'sin_filtro',
             **{'cm_'+k:v for k,v in result.items()}}
+
+
+def terrain_clip_command(fusion, listing, output, plot, radius, cell, support=5.):
+    """Keep original XYZ/classes; include a square halo before constructing MDT.
+
+    Selected neighboring tiles are all read into ONE LAS. Coverage and actual MDT
+    checks remain mandatory; a buffered subset is not evidence of full coverage.
+    """
+    from .fusion import program
+    if not all(math.isfinite(v) and v > 0 for v in (radius, cell, support)):
+        raise ValueError('Radio, celda y apoyo deben ser positivos y finitos')
+    extent = radius + 2*cell + support
+    bounds = [format(v,'.12g') for v in (plot.x-extent,plot.y-extent,plot.x+extent,plot.y+extent)]
+    return [str(program(fusion,'ClipData')), '/shape:0', str(listing), str(output), *bounds]

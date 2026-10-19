@@ -119,9 +119,19 @@ class AutomaticTests(unittest.TestCase):
             def fake_fusion(args):
                 name=Path(args[0]).stem
                 if name=='LDA2LAS':shutil.copyfile(args[1],args[2])
-                elif name=='GridSurfaceCreate':Path(args[2]).write_bytes(b'mocked DTM')
+                elif name=='GridSurfaceCreate':
+                    self.assertEqual(Path(args[-1]).name,'entorno_mdt.las')
+                    self.assertTrue(Path(args[-1]).is_file())
+                    self.assertIn('/class:2',args)
+                    Path(args[2]).write_bytes(b'mocked DTM')
                 elif name=='DTM2ASCII':Path(args[-1]).write_text('ncols 100\nnrows 100\nxllcorner 399950\nyllcorner 4599950\ncellsize 1\nNODATA_value -9999\n'+(' '.join(['100']*100)+'\n')*100)
-                elif name=='ClipData':shutil.copyfile(originals[0],args[-5])
+                elif name=='ClipData':
+                    if '/shape:0' in args:
+                        self.assertEqual(Path(args[2]).name,'teselas.txt')
+                        self.assertEqual(len(Path(args[2]).read_text().splitlines()),4)
+                    else:
+                        self.assertEqual(Path(args[-6]).name,'entorno_mdt.las')
+                    shutil.copyfile(originals[0],args[-5])
                 elif name=='CloudMetrics':
                     if cutoff is not None:
                         self.assertIn('/minht:2',args)
