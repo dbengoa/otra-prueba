@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 import io
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, replace
 from itertools import combinations
 import json
 import logging
@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-VERSION = '0.1.0-experimental'
+VERSION = '0.2.0-experimental'
 LOGGER = logging.getLogger('modelizacion_forestal_lidar.engine')
 LOGGER.setLevel(logging.INFO)
 LOGGER.propagate = False
@@ -53,8 +53,8 @@ class Options:
             raise ValueError('Repeticiones: 1–20; preselección: 1–15')
         if not 1 <= self.max_predictors <= 4 or not 3 <= self.min_per_coefficient:
             raise ValueError('Predictores: 1–4; observaciones por coeficiente: al menos 3')
-        if self.min_plots < 10 or not 0 <= self.max_missing < 1:
-            raise ValueError('Mínimo operativo: al menos 10 parcelas; faltantes: [0,1)')
+        if self.min_plots < 8 or not 0 <= self.max_missing < 1:
+            raise ValueError('Mínimo operativo: al menos 8 parcelas; faltantes: [0,1)')
         if not all(math.isfinite(v) for v in (self.max_missing,self.max_vif,self.max_correlation,self.bias_weight,self.score_tolerance)):
             raise ValueError('Las opciones numéricas deben ser finitas')
         if self.max_vif <= 1 or not 0 < self.max_correlation <= 1 or self.bias_weight < 0:
@@ -329,10 +329,25 @@ def equation(target, model):
     return target+' = '+' + '.join(terms)
 
 
+def effective_options(options, n):
+    """A small-sample procedure; retain fully nested selection and group splits."""
+    if n < 20:
+        # With n=8: 7 outer-training plots and 6 inner-training plots, enough
+        # for ONE slope + intercept at 3 observations per coefficient.
+        return replace(options, outer=20, inner=20, repeats=1,
+                       pool=min(options.pool, 3), max_predictors=1,
+                       min_per_coefficient=3)
+    return options
+
+
 def calibrate_target(X, y, identifiers, target, options, groups=None):
     CHECK_CANCEL()
     if len(y) < options.min_plots:
         raise ValueError(f'{target}: sólo {len(y)} parcelas válidas; mínimo operativo configurado {options.min_plots}')
+    options = effective_options(options, len(y))
+    exploratory = len(y) < 20
+    if exploratory:
+        LOGGER.warning('%s: EXPLORATORIO con %d parcelas; validación anidada dejando una parcela/grupo fuera, máximo 1 predictor y preselección <=3. Errores muy inciertos.', target, len(y))
     all_predictions = []
     for repetition in range(options.repeats):
         splits = folds(len(y), options.outer, options.seed+repetition, groups)
@@ -360,7 +375,11 @@ def calibrate_target(X, y, identifiers, target, options, groups=None):
     final, ranking, invalid = select_model(X, y, options, groups)
     final.update(variable=target, ecuacion=equation(target, final), n_calibracion=len(y),
                  validacion_externa_procedimiento=outer_scores)
+    final['opciones_efectivas'] = asdict(options)
+    final['modo'] = 'exploratorio_muestra_pequena' if exploratory else 'estandar'
     final['advertencias'] = []
+    if exploratory:
+        final['advertencias'].append('EXPLORATORIO: menos de 20 parcelas; selección y errores de validación muy inestables. No es validación independiente ni garantía de aplicación a otras masas.')
     if final['familia'] == 'media':
         final['advertencias'].append('La búsqueda no mejoró la media: no se ha seleccionado una relación LiDAR útil.')
     if outer_scores['rmse'] >= outer_scores['referencia_rmse']:
@@ -467,7 +486,7 @@ def fit_command(args):
             model, external, ranking, invalid = calibrate_target(X.iloc[np.flatnonzero(valid)], response.to_numpy()[valid],
                     common.to_numpy()[valid], target, options, selected_groups)
             models[target] = model; predictions.append(external)
-            reports.append({'variable': target, 'familia_final': model['familia'], 'ecuacion': model['ecuacion'],
+            reports.append({'variable': target, 'modo':model['modo'], 'familia_final': model['familia'], 'ecuacion': model['ecuacion'],
                             **model['validacion_externa_procedimiento']})
             write_csv(pd.DataFrame(ranking), destination/('candidatos_'+target+'.csv'))
             write_json(destination/('descartados_'+target+'.json'), invalid)
@@ -492,7 +511,7 @@ def fit_command(args):
                    'modelos': models, 'convencion_sesgo': 'predicho - observado',
                    'aviso': 'La CV externa evalúa el procedimiento de selección, no es una prueba independiente del modelo final reajustado.'}
         write_json(destination/'modelos.json', package)
-        (destination/'ecuaciones.txt').write_text('\n\n'.join(m['ecuacion'] for m in models.values())+'\n', encoding='utf-8')
+        (destination/'ecuaciones.txt').write_text('\n\n'.join(m['ecuacion']+'\n'+'\n'.join(m['advertencias']) for m in models.values())+'\n', encoding='utf-8')
         write_json(destination/'estado.json', {'estado': 'completado', 'version': VERSION})
     except KeyboardInterrupt:
         write_json(destination/'estado.json', {'estado': 'cancelado'})
@@ -508,7 +527,7 @@ def fit_command(args):
 def predict_command(args):
     CHECK_CANCEL()
     package = json.loads(Path(args.modelos).read_text(encoding='utf-8'))
-    if package.get('version') != VERSION or not isinstance(package.get('modelos'), dict):
+    if package.get('version') not in (VERSION, '0.1.0-experimental') or not isinstance(package.get('modelos'), dict):
         raise ValueError('Archivo de modelos incompatible')
     for target, model in package['modelos'].items():
         if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', target) or model.get('familia') not in ('media', 'lineal', 'potencial'):

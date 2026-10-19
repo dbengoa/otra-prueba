@@ -83,7 +83,7 @@ class ModelTask(QgsTask):
 class Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Modelización forestal LiDAR · 0.1.0 experimental')
+        self.setWindowTitle('Modelización forestal LiDAR · 0.2.0 experimental')
         self.resize(820, 760)
         self.task = None
         self.result_path = None
@@ -110,10 +110,11 @@ class Dialog(QDialog):
             box = QComboBox(); box.addItem(default); form.addRow(title, box); self.targets.append((box, default))
         self.group = QComboBox(); self.group.addItem('(sin grupos)')
         form.addRow('Grupo / monte en campo (opcional)', self.group)
-        self.protocol = QComboBox(); self.protocol.addItems(['Todos los retornos: cm_Elev …', 'Sólo >2 m: cm_gt2_Elev … (CSV maestro)'])
+        self.protocol = QComboBox(); self.protocol.addItems(['Columnas estándar: cm_Elev … (corte según CSV)', 'Sólo >2 m: cm_gt2_Elev … (CSV maestro)'])
         form.addRow('Familia de métricas del CSV', self.protocol)
         self.max_predictors = QSpinBox(); self.max_predictors.setRange(1, 3); self.max_predictors.setValue(3)
-        form.addRow('Máximo de predictores', self.max_predictors)
+        self.max_predictors.setToolTip('Con 8–19 parcelas se limita automáticamente a 1 predictor por ecuación.')
+        form.addRow('Máximo de predictores (desde 20 parcelas)', self.max_predictors)
         self.bias = QDoubleSpinBox(); self.bias.setRange(0, 10); self.bias.setSingleStep(.1); self.bias.setValue(.5)
         form.addRow('Peso de |sesgo| en selección', self.bias)
         self.normalize = QCheckBox('Normalizar ID: 226.0 → 226 (conservar ceros iniciales)')
@@ -121,7 +122,7 @@ class Dialog(QDialog):
         self.graphs = QCheckBox('Generar gráficos de validación'); self.graphs.setChecked(True)
         for box in (self.normalize, self.partial, self.graphs): form.addRow(box)
         self.info = QPlainTextEdit(); self.info.setReadOnly(True)
-        self.info.setPlainText('Mínimo: 20 parcelas válidas por variable. CV externa 5 / interna 4; semilla 2026.\nUse métricas homogéneas: el filtro de altura debe coincidir en calibración y aplicación.\nLa CV evalúa la selección; no sustituye una prueba independiente del modelo final.')
+        self.info.setPlainText('Mínimo: 8 parcelas válidas por variable. Con 8–19: modo exploratorio, máximo 1 predictor.\nCV anidada dejando una parcela/grupo fuera; preselección <=3. Desde 20: CV 5/4 y hasta 3 predictores.\nUse métricas homogéneas: el filtro de altura debe coincidir en calibración y aplicación.\nLa CV evalúa la selección; no sustituye una prueba independiente del modelo final.')
         layout.addWidget(self.info, 1)
         self.progress = QProgressBar(); layout.addWidget(self.progress)
         buttons = QHBoxLayout(); layout.addLayout(buttons)
@@ -199,7 +200,7 @@ class Dialog(QDialog):
         targets = [box.currentText() for box, _ in self.targets]
         if len(set(targets)) != 4: raise ValueError('Las cuatro variables de campo deben ser columnas diferentes')
         argv = ['ajustar', *common, '--campo', field, '--id-campo', self.id_field.currentText(), '--decimal-campo', self.dec_field.currentText(), '--objetivos', *targets,
-                '--max-predictores', str(self.max_predictors.value()), '--peso-sesgo', str(self.bias.value())]
+                '--min-parcelas', '8', '--max-predictores', str(self.max_predictors.value()), '--peso-sesgo', str(self.bias.value())]
         if self.partial.isChecked(): argv.append('--permitir-no-coincidentes')
         if not self.graphs.isChecked(): argv.append('--sin-graficos')
         if self.group.currentIndex() > 0: argv += ['--grupo', self.group.currentText()]

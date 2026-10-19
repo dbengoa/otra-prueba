@@ -1,3 +1,11 @@
+# Nota para el complemento QGIS 0.2.0
+
+La documentación de abajo corresponde al motor independiente original. La interfaz
+QGIS 0.2.0 admite mínimo 8 y activa automáticamente el procedimiento exploratorio
+con 8–19 parcelas descrito en README.md: CV anidada dejando una parcela/grupo fuera,
+máximo un predictor, preselección <=3 y 3 observaciones por coeficiente. Esas reglas
+sustituyen los mínimos/opciones estándar indicados abajo para esa muestra pequeña.
+
 # Ecuaciones de inventario forestal con LiDAR — 0.1.0 experimental
 
 Script independiente del plugin QGIS. Une datos de campo con métricas LiDAR por ID y

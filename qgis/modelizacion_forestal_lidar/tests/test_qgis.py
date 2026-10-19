@@ -48,6 +48,23 @@ class Integration(unittest.TestCase):
         self.dialog.output.setText(str(self.root/'pred.csv'))
         task=ModelTask(self.dialog.arguments()); self.assertTrue(task.run(),task.error)
         self.assertEqual(len(engine.read_table(self.root/'pred.csv')),40)
+    def test_eight_plots_four_targets_gui_arguments(self):
+        for path in (self.lidar,self.field):
+            lines=path.read_text().splitlines()
+            path.write_text('\n'.join(lines[:9])+'\n')
+        args=self.dialog.arguments()
+        self.assertEqual(args[args.index('--min-parcelas')+1],'8')
+        task=ModelTask(args);self.assertTrue(task.run(),task.error)
+        result=self.root/'result'
+        package=json.loads((result/'modelos.json').read_text())
+        self.assertEqual(len(package['modelos']),4)
+        for model in package['modelos'].values():
+            self.assertEqual(model['n_calibracion'],8)
+            self.assertEqual(model['modo'],'exploratorio_muestra_pequena')
+            self.assertLessEqual(len(model['predictores']),1)
+        self.assertIn('EXPLORATORIO',(result/'ecuaciones.txt').read_text())
+        self.assertEqual(len(engine.read_table(result/'predicciones_validacion.csv')),32)
+
     def test_reject_mixed_protocol(self):
         self.lidar.write_text('parcela_id,cm_Elev P95,disponible_todos\n1,10,1\n2,,0\n')
         with self.assertRaisesRegex(ValueError,'homogéneo'): self.dialog.arguments()
@@ -63,10 +80,10 @@ class Integration(unittest.TestCase):
         self.assertIn('Cancelado',task.error)
         self.assertEqual(json.loads((self.root/'result'/'estado.json').read_text())['estado'],'cancelado')
         self.assertEqual(engine.LOGGER.handlers,[])
-    def test_minimum_20_and_invalid_ids(self):
+    def test_minimum_8_and_invalid_ids(self):
         self.lidar.write_text('parcela_id,cm_Elev P95\n1,10\n')
         self.field.write_text('parcela_id,V_ha,G_ha,N_ha,Hdom\n1,100,20,500,10\n')
-        task=ModelTask(self.dialog.arguments()); self.assertFalse(task.run()); self.assertIn('20',task.error)
+        task=ModelTask(self.dialog.arguments()); self.assertFalse(task.run()); self.assertIn('8',task.error)
     def test_async_task(self):
         from qgis.PyQt.QtCore import QEventLoop, QTimer
         self.dialog.mode.setCurrentIndex(1)

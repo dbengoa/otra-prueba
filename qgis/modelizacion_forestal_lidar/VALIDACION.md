@@ -1,37 +1,39 @@
-# Validación 0.1.0 experimental (19-10-2026)
+# Validación QGIS 0.2.0 experimental — 19-10-2026
 
-## Ejecutado en este entorno Linux
+## Ejecutado en Linux
 
-Integración: QGIS 3.40.6, Python 3.13, pandas 3.0.6, NumPy 2.5.4 y matplotlib 3.11.2.
-Motor adicional: Python 3.12 con las dependencias disponibles del entorno.
+- 17 pruebas estadísticas del motor: lineal/potencial, Duan, selección anidada,
+  grupos, IDs, errores y predicción.
+- 7 pruebas nuevas de muestras pequeñas: ocho parcelas con candidato lineal y
+  potencial, predicción externa única por parcela y entrenamientos internos de seis,
+  rechazo de siete, límites estándar conservados desde 20, selección sin la parcela
+  externa, separación de grupos, rechazo de grupos insuficientes y lectura de JSON
+  de modelos 0.1.0 (algunos aspectos comparten prueba).
+- 8 pruebas de integración QGIS 3.40.6/Python 3.13, incluidas cuatro respuestas con
+  ocho parcelas, 32 predicciones externas, cuatro PNG y advertencias exportadas.
+- Ejecución privada con los ocho registros aportados y sus datos de campo: las
+  cuatro respuestas completaron el proceso y se generaron cuatro PNG. Los datos,
+  coeficientes y resultados privados NO se incluyen en el repositorio ni el ZIP.
+- ZIP con carpeta raíz válida, sintaxis de los módulos y SHA256 verificadas.
 
-- 17 pruebas estadísticas reutilizadas contra el motor incluido en el complemento:
-  lineal/potencial, retransformation, selección/CV, grupos, IDs, errores y predicción.
-- 7 pruebas con las clases reales de QGIS/PyQt en modo offscreen: dependencias y
-  selección de columnas; plantilla y rechazo de sobrescritura; ajuste de las cuatro
-  respuestas con 40 parcelas artificiales, 4 PNG y predicción; rechazo de mezcla de
-  protocolos; cancelación durante CV con estado cancelado; mínimo de 20 parcelas;
-  ejecución asíncrona real con QgsTask y recuperación de los controles de interfaz.
-- ZIP construido con una carpeta raíz válida y sin cachés ni datos privados.
-- pandas/matplotlib de prueba instalados sólo en carpeta aislada de este entorno;
-  esos paquetes binarios NO se incluyen en el complemento.
-
-Comandos para reproducir, desde un entorno que disponga de QGIS y dependencias:
-
-```
-python -m unittest discover -s tests -p test_engine.py -v
-QT_QPA_PLATFORM=offscreen python tests/test_qgis.py
-python build.py
-```
+Total automatizado: 32 pruebas aprobadas (17 + 7 + 8).
+Las buenas pruebas artificiales comprueban funcionamiento, no validez forestal.
 
 ## Pendiente en Windows
 
-- Instalación desde ZIP y uso manual en el QGIS concreto del usuario.
-- Disponibilidad y compatibilidad de NumPy/pandas/matplotlib de esa instalación.
-- Restricciones del ordenador corporativo y permisos de carpeta/unidad de red.
-- Apertura de ayuda/resultados con aplicaciones Windows y cancelación de un ajuste
-  largo desde la interfaz en ese sistema.
-- Validación forestal con datos de campo reales, homogéneos e independientes.
+Instalación y uso de QGIS en el ordenador del usuario, dependencias de esa
+instalación y comportamiento de sus unidades de red. Las pruebas Linux no son
+pruebas Windows. El workflow añadido puede ejecutar las pruebas portables en
+Windows/Linux; su configuración no equivale a haberlas ejecutado. No ejecuta QGIS
+Windows. Falta validación forestal independiente con una muestra mayor.
 
-No se afirma que las pruebas Linux sean pruebas Windows ni que los ejemplos
-artificiales validen ecuaciones de inventario reales.
+## Reproducción
+
+Desde qgis/modelizacion_forestal_lidar con dependencias disponibles:
+
+```
+python -m unittest discover -s tests -p test_engine.py -v
+python -m unittest discover -s tests -p test_small_sample.py -v
+QT_QPA_PLATFORM=offscreen python tests/test_qgis.py
+python build.py
+```

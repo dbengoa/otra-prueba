@@ -1,7 +1,7 @@
 [general]
 name=Modelización forestal LiDAR
 description=Ecuaciones lineales y potenciales con validación cruzada a partir de CSV de campo y LiDAR
-version=0.1.0
+version=0.2.0
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 author=David Bengoa

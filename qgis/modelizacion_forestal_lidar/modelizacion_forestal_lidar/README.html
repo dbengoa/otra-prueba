@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><meta charset="utf-8"><title>Modelización forestal LiDAR</title><body><pre style="white-space:pre-wrap;font:16px sans-serif"># Modelización forestal LiDAR — complemento QGIS 0.1.0 experimental
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Modelización forestal LiDAR</title><body><pre style="white-space:pre-wrap;font:16px sans-serif"># Modelización forestal LiDAR — complemento QGIS 0.2.0 experimental
 
 Interfaz de QGIS para el motor de modelización 0.1.0. No abre PowerShell,
 no ejecuta programas externos y no instala paquetes. No requiere FUSION para
@@ -15,13 +15,13 @@ ajustar; utiliza los CSV de métricas ya calculados.
 - CSV UTF-8 de campo: un ID único por parcela, volumen m³/ha, área basal m²/ha,
   pies/ha y altura dominante en metros. Nombres predeterminados:
   `parcela_id,V_ha,G_ha,N_ha,Hdom`; se pueden seleccionar otras columnas.
-- Mínimo operativo: 20 parcelas válidas por respuesta; no garantiza suficiencia.
+- Mínimo operativo en la interfaz: 8 parcelas válidas por respuesta. No garantiza suficiencia.
   Fechas, soporte espacial, filtros y normalización deben ser compatibles.
 - Carpeta de salida nueva o vacía y permisos de escritura. Admite espacios.
 
 ## Instalación y uso, sin consola
 
-1. Descargue `modelizacion_forestal_lidar-0.1.0-experimental.zip` de `dist`.
+1. Descargue `modelizacion_forestal_lidar-0.2.0-experimental.zip` de `dist`.
    No use el ZIP de todo el repositorio y no descomprima el ZIP instalable.
 2. QGIS → Complementos → Administrar e instalar complementos → Instalar a partir
    de ZIP → seleccione el archivo → Instalar complemento.
@@ -51,13 +51,47 @@ disponible_gt2), rechaza el ajuste. Prepare un CSV con parcelas homogéneas o vu
  a calcular las métricas con el mismo criterio. No interprete los vacíos como cero.
 Un CSV CloudMetrics filtrado que aún usa nombres `cm_Elev ...` debe documentarse
 como filtrado: la cabecera por sí sola no permite reconocer ese protocolo.
+En el selector, «Columnas estándar: cm_Elev» sirve tanto para métricas sin filtro
+como para salidas del inventario filtradas a una misma altura. «cm_gt2» se reserva
+al antiguo maestro con ese prefijo.
 En predicción se deben conservar exactamente los nombres de métricas y protocolo
 usados al calibrar. No se hace conversión automática entre familias.
+
+## Muestras de 8 a 19 parcelas: modo exploratorio automático
+
+No basta con cambiar el mínimo. Para cada respuesta con 8–19 valores válidos:
+
+- Una parcela fuera en CV externa y otra en la interna (con 8: entrenamientos
+  externos de 7 e internos de 6). La selección permanece dentro del entrenamiento.
+- Máximo 1 predictor por ecuación, preselección de hasta 3 posiciones del ranking
+  en cada entrenamiento, mínimo 3 observaciones por coeficiente, intercepto incluido.
+- Compara lineal, potencial con Duan y media. No se obliga a seleccionar LiDAR.
+- Una repetición. Con grupos se deja un grupo fuera en cada nivel, sin mezclarlos;
+  si faltan grupos se informa del error. Si los entrenamientos agrupados son muy
+  pequeños, sólo puede resultar viable la media.
+- Se exige que queden al menos 8 parcelas válidas por respuesta después del cruce
+  de IDs y la exclusión de respuestas vacías. Con 7 no se ajusta esa respuesta.
+- Se marca EXPLORATORIO en ecuaciones.txt, registro, modelos.json y resumen CSV.
+  El JSON guarda las opciones efectivas de cada respuesta, además de las solicitadas.
+
+Con 8 parcelas, RMSE, sesgo, elección de métrica y coeficientes son muy inestables.
+No usar como calibración operativa validada ni presentar la CV como prueba
+independiente del modelo definitivo. Amplíe la muestra y valide con datos nuevos.
+El mínimo 8 habilita el cálculo, no garantiza un modelo útil.
+
+Desde 20 parcelas válidas se conserva el procedimiento estándar de la versión 0.1:
+CV 5/4, hasta 3 predictores según interfaz y 5 observaciones por coeficiente. El
+número permitido puede ser menor dentro de los entrenamientos. La interfaz muestra
+el máximo solicitado para este modo; para 8–19 se limita automáticamente a 1.
+
+El motor mantiene por defecto 20 si se usa directamente desde Python; la interfaz
+pasa explícitamente el mínimo de 8. El programa independiente original no se modifica.
+Los modelos guardados por el complemento 0.1.0 se pueden aplicar en 0.2.0.
 
 ## Método y resultados
 
 Compara lineales y potenciales con corrección de Duan, incluida la media como
-referencia. CV externa 5 particiones, interna 4, semilla 2026. Preselección y
+referencia. En modo estándar: CV externa 5 particiones, interna 4, semilla 2026. Preselección y
 selección dentro de cada entrenamiento; hasta 3 predictores, 5 observaciones por
 coeficiente. Selección RMSE + peso × |sesgo|, peso inicial 0.5; tolerancia del 2 %
 para favorecer modelos más sencillos. Sesgo = predicho − observado.

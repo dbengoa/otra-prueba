@@ -2,9 +2,9 @@ Dimensiones inconsistentes en modelos.json
 Use una carpeta de salida nueva o vacía; no se sobrescriben resultados
 IDs no coincidentes; revise auditoria_union.json o autorice el cruce parcial con --permitir-no-coincidentes
 ----------------------------------------------------------------------
-Ran 17 tests in 1.430s
+Ran 17 tests in 2.041s
 
 OK
-Resultados: /tmp/tmpd7zyf5q9/out
-Predicciones: /tmp/tmpd7zyf5q9/pred.csv
-Predicciones: /tmp/tmpocaji2ir/pred.csv
+Resultados: /tmp/tmpegoyoqkx/out
+Predicciones: /tmp/tmpegoyoqkx/pred.csv
+Predicciones: /tmp/tmpqk8m351f/pred.csv
