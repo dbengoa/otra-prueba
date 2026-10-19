@@ -1,7 +1,7 @@
 name: Inventario LiDAR experimental
 on:
   push:
-    branches: [experimental/inventario-forestal-lidar-0.4.1]
+    branches: [experimental/inventario-forestal-lidar-0.4.2]
     paths:
       - 'qgis/inventario_forestal_lidar/**'
       - '.github/workflows/experimental-lidar.yml'
@@ -12,7 +12,22 @@ concurrency:
   group: experimental-lidar-release
   cancel-in-progress: false
 jobs:
+  windows-storage:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1'
+    defaults:
+      run:
+        working-directory: qgis/inventario_forestal_lidar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Storage and LAS read error regressions
+        run: python -m unittest discover -s tests -p test_storage.py -v
   test-package-release:
+    needs: windows-storage
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,8 +45,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="lidar-v0.4.1-experimental-${GITHUB_SHA:0:7}"
-          gh release create "$tag" dist/inventario_forestal_lidar-0.4.1-experimental.zip dist/inventario_forestal_lidar-0.4.1-experimental.zip.sha256 \
+          tag="lidar-v0.4.2-experimental-${GITHUB_SHA:0:7}"
+          gh release create "$tag" dist/inventario_forestal_lidar-0.4.2-experimental.zip dist/inventario_forestal_lidar-0.4.2-experimental.zip.sha256 \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "Inventario forestal LiDAR 0.4.1 experimental" \
+            --title "Inventario forestal LiDAR 0.4.2 experimental" \
             --notes-file docs/RELEASE.md

@@ -63,8 +63,25 @@ test_local_engine_without_index_and_conversion_cache (test_qgis.QgisTests.test_l
 test_local_point_support_missing_neighbor_and_ground (test_qgis.QgisTests.test_local_point_support_missing_neighbor_and_ground) ... skipped 'QGIS/GDAL no disponibles en este intérprete'
 test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_complete) ... skipped 'QGIS/GDAL no disponibles en este intérprete'
 test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... skipped 'QGIS/GDAL no disponibles en este intérprete'
+test_einval_reopens_and_retries_same_range (test_storage.LASReadTests.test_einval_reopens_and_retries_same_range) ... ok
+test_large_range_reads_are_bounded_and_exact (test_storage.LASReadTests.test_large_range_reads_are_bounded_and_exact) ... ok
+test_metadata_retries_einval_without_altering_file (test_storage.LASReadTests.test_metadata_retries_einval_without_altering_file) ... ok
+test_partial_range_is_discarded_before_retry (test_storage.LASReadTests.test_partial_range_is_discarded_before_retry) ... ok
+test_read_error_preserves_errno_filename_and_offset (test_storage.LASReadTests.test_read_error_preserves_errno_filename_and_offset) ... ok
+test_both_logs_unavailable_do_not_raise (test_storage.StorageTests.test_both_logs_unavailable_do_not_raise) ... ok
+test_cancel_during_retry_preserves_previous_snapshot (test_storage.StorageTests.test_cancel_during_retry_preserves_previous_snapshot) ... ok
+test_cancellation_and_authorization_survive_failed_final_write (test_storage.StorageTests.test_cancellation_and_authorization_survive_failed_final_write) ... ok
+test_checkpoint_failure_stops_and_keeps_diagnostic (test_storage.StorageTests.test_checkpoint_failure_stops_and_keeps_diagnostic) ... ok
+test_concurrent_writers_use_different_temporaries (test_storage.StorageTests.test_concurrent_writers_use_different_temporaries) ... ok
+test_disk_full_is_not_retried (test_storage.StorageTests.test_disk_full_is_not_retried) ... ok
+test_failed_replacement_preserves_previous_json (test_storage.StorageTests.test_failed_replacement_preserves_previous_json) ... ok
+test_log_failure_uses_alternate_file (test_storage.StorageTests.test_log_failure_uses_alternate_file) ... ok
+test_missing_parent_is_not_recreated (test_storage.StorageTests.test_missing_parent_is_not_recreated) ... ok
+test_processing_error_not_replaced_by_final_state_failure (test_storage.StorageTests.test_processing_error_not_replaced_by_final_state_failure) ... ok
+test_success_is_not_reported_if_final_write_fails (test_storage.StorageTests.test_success_is_not_reported_if_final_write_fails) ... ok
+test_transient_missing_path_is_retried (test_storage.StorageTests.test_transient_missing_path_is_retried) ... ok
 
 ----------------------------------------------------------------------
-Ran 65 tests in 0.866s
+Ran 82 tests in 0.889s
 
 OK (skipped=10)

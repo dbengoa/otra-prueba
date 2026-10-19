@@ -1,10 +1,56 @@
-# Inventario forestal LiDAR — 0.4.1 experimental
+# Inventario forestal LiDAR — 0.4.2 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
 
-## Corrección 0.4.1: arranque de FUSION y diagnóstico por fase
+## Corrección 0.4.2: lectura LAS y conservación del error original
+
+El último registro recibido muestra dos errores: primero `[Errno 22] Invalid argument`
+durante la comprobación de cobertura; después un fallo al guardar `estado.json.tmp`.
+En 0.4.1 el guardado final podía ocultar el error inicial. Las conversiones LAS del
+registro habían terminado y estaban verificadas. No se afirma que el origen sea
+una desconexión, permisos, FUSION o una tesela concreta: el registro anterior no
+identifica la operación de lectura exacta.
+
+Ahora la comprobación lee los LAS sin búfer Python, en bloques de puntos de hasta
+1 MiB. Ante un error transitorio o errno 22, reabre el archivo y reintenta **el mismo
+rango de bytes**, como máximo tres veces adicionales. Una lectura parcial fallida
+se descarta y se vuelve a leer; no se duplican ni saltan puntos. También se reintenta
+la lectura de metadatos. Si persiste, el error informa del archivo y, para los bloques
+de puntos, del byte y tamaño solicitados; el registro incluye el traceback de cobertura.
+Se indica el LAS que se está comprobando y el progreso de lectura.
+Esta medida de compatibilidad necesita comprobación con su unidad Q:; no garantiza
+que una carpeta o archivo no disponible pueda leerse.
+
+La escritura JSON usa temporales únicos junto al destino, conserva el JSON anterior
+hasta completar el reemplazo y reintenta sólo fallos transitorios, con pausas de
+0,2/0,5/1 s. **No recrea una carpeta de red desaparecida ni omite la cobertura.**
+Si el guardado del estado sigue fallando, se detiene con un diagnóstico alternativo.
+Al finalizar, un fallo de guardado no sustituye el error inicial, la cancelación o
+la autorización pendiente. Si el cálculo terminó pero no se pudo confirmar el estado,
+se informa expresamente de ello en vez de anunciar un éxito completo.
+
+Diagnóstico alternativo en Windows:
+
+```text
+%LOCALAPPDATA%\InventarioForestalLiDAR\diagnosticos\<ejecución>\estado.json
+%LOCALAPPDATA%\InventarioForestalLiDAR\diagnosticos\<ejecución>\proceso.log
+```
+
+El registro alternativo sólo recoge mensajes posteriores al fallo de escritura;
+no se promete una copia del historial de red. Si falta LOCALAPPDATA se usa TEMP.
+La ventana muestra las rutas que se hayan podido guardar. Si también falla ese
+almacenamiento, se conserva el error original en el mensaje; no se promete un respaldo.
+
+**Actualizar y reanudar:** instale el ZIP 0.4.2, reinicie QGIS y use la misma carpeta.
+No borre `originales/`, `LAS/` ni sus recibos JSON: los archivos completos verificados
+se reutilizan. Si Q: no está disponible de forma estable, espere a recuperarla o haga
+una **copia**, sin mover los originales, de `originales/` y `LAS/` con sus recibos a una
+carpeta local sin espacios y selecciónela como carpeta de trabajo. La disponibilidad
+de espacio y los permisos deben permitir leer y escribir; el plugin no los cambia.
+
+## Compatibilidad incorporada en 0.4.1: arranque de FUSION y diagnóstico por fase
 
 El registro real recibido confirma conversión completa de ambas teselas, MDT y
 DTM2ASCII correctos. ClipData de 32 bits termina con 3221225477 (0xC0000005) antes de
@@ -34,7 +80,7 @@ cada diez segundos mientras un ejecutable continúa y los fallos muestran fase,
 parcela y código. Un aviso de actividad no garantiza que el ejecutable avance;
 se puede cancelar. No se inventan métricas cuando ClipData falla.
 
-**Reanudar:** instale el ZIP 0.4.1 y reinicie QGIS. Use la misma carpeta de trabajo
+**Reanudar:** instale el ZIP 0.4.2 y reinicie QGIS. Use la misma carpeta de trabajo
 para aprovechar los LAZ y LAS existentes; no borre originales ni conversiones.
 Si vuelve a fallar, el diagnóstico necesario está en `proceso.log`, `fusion.log`
 (si el programa pudo crearlo) y `estado.json`, dentro de la nueva ejecución.
@@ -72,10 +118,10 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.4.1-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.4.2-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.4.1**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.4.2**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 
@@ -181,9 +227,9 @@ reutiliza conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado en 0.4.1:** 65 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
+**Ejecutado en 0.4.2:** 82 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
 archivos parciales, nombres, copia, cancelación y flujo hasta GeoPackage con descarga
-humana simulada y FUSION sustituido. Con Python sin QGIS: 55 aprobadas y 10 omitidas.
+humana simulada y FUSION sustituido. Con Python sin QGIS: 72 aprobadas y 10 omitidas.
 La consulta real CNIG y sus huellas se verificaron en versiones anteriores; evidencias
 en FUENTES.md. Véase VALIDACION.md para el alcance exacto.
 

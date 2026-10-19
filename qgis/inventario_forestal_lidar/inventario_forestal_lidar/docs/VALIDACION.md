@@ -1,7 +1,7 @@
-# Validación 0.4.1 — 19 de octubre de 2026
+# Validación 0.4.2 — 19 de octubre de 2026
 
-Ejecutado: 65 pruebas aprobadas en Linux con QGIS 3.40.6; ninguna omitida.
-Python sin QGIS: 55 aprobadas y 10 de integración omitidas. Registros en tests-linux.txt
+Ejecutado: 82 pruebas aprobadas en Linux con QGIS 3.40.6; ninguna omitida.
+Python sin QGIS: 72 aprobadas y 10 de integración omitidas. Registros en tests-linux.txt
  y tests-portable.txt. Los avisos de Qt/GDAL no afectan al resultado.
 
 Once pruebas de vigilancia verifican nombres (guiones/bajos/sufijos), copia conservando
@@ -17,7 +17,7 @@ Se mantienen pruebas de CRS, cobertura/MDT, parámetros FUSION, nombres PNR sin 
 deduplicación, errores y cancelación. No son cálculos FUSION reales.
 
 Consultas CNIG reales de catálogo y geometrías: ejecutadas en versiones anteriores,
-evidencias conservadas en FUENTES.md. No se repitió descarga binaria CNIG en 0.4.1.
+evidencias conservadas en FUENTES.md. No se repitió descarga binaria CNIG en 0.4.2.
 
 ## Regresión del fallo ClipData comunicado
 
@@ -37,10 +37,28 @@ FUSION 4.61 de 32 bits, no una prueba satisfactoria de ClipData/CloudMetrics. No
 ha reproducido aquí el fallo real. No se conserva su registro íntegro en el repositorio
 por contener rutas personales de red; sólo el código de error en pruebas sintéticas.
 
+## Regresiones de lectura y estado 0.4.2
+
+17 pruebas adicionales reproducen I/O fallida: reintento de ENOENT, temporales únicos
+con escritores concurrentes, conservación de JSON previo, cancelación, disco lleno,
+carpeta desaparecida y diagnóstico alternativo. Verifican que un fallo de estado final
+no sustituye el error original, la cancelación o la autorización, y que un fallo de
+confirmación después del cálculo no se anuncia como éxito completo.
+
+Para errno 22 se simulan lecturas de metadatos y puntos fallidas, reapertura con el
+mismo offset, descarte de una lectura parcial y límites de 1 MiB. Se comprueba que los
+archivos fuente permanecen intactos. El error persistente conserva errno, ruta y byte.
+La prueba no reproduce la causa real de errno 22 en el servidor del usuario.
+
+El workflow ejecuta estas 17 pruebas en Windows antes de permitir la publicación;
+consulte Actions para confirmar el resultado del runner de la versión descargada.
+En Linux se ejecutó además toda la suite QGIS/GDAL con 82 pruebas aprobadas. Las
+pruebas portables son 72 aprobadas y 10 omitidas por requerir QGIS.
+
 ## Pendiente en Windows, con datos reales
 
 1. Comprobar que ClipData64.exe y dependencias oficiales están en C:\FUSION si se desea 64 bits.
-   Instalar ZIP y reiniciar QGIS; comprobar versión 0.4.1 y carpeta Descargas.
+   Instalar ZIP y reiniciar QGIS; comprobar versión 0.4.2 y carpeta Descargas.
 2. Centros con cobertura PNOA3; incluir parcela entre dos teselas y esquina de cuatro.
 3. Ejecutar, comprobar Chrome habitual sin depuración. Pulsar Descargar, completar
    trámite oficial y guardar en carpeta indicada sin renombrar. No abrir descargaDir
@@ -51,9 +69,12 @@ por contener rutas personales de red; sólo el código de error en pruebas sint�
    reanudar debe reutilizar las teselas completas sin nueva descarga.
 6. Con FUSION 4.61 real y bibliotecas LAZ: comprobar descompresión, conteos, MDT clase 2,
    círculo y normalización ClipData, métricas y coincidencia de IDs en CSV/GPKG.
-7. Si ClipData falla, comprobar fase/ejecutable/código y /version en proceso.log;
+7. Reproducir la parcela 213.0 del incidente, confirmar lectura de LAS/cobertura y
+   que un fallo primario aparece antes del aviso de guardado. Probar desconexión y
+   reconexión de Q: sin datos originales únicos en riesgo; revisar el respaldo local.
+8. Si ClipData falla, comprobar fase/ejecutable/código y /version en proceso.log;
    guardar estado.json y fusion.log. Distinguir fallo de arranque de fallo al recortar.
-8. Inspeccionar proceso.log, estado.json, coberturas y recibos SHA-256; comparar cotas y
+9. Inspeccionar proceso.log, estado.json, coberturas y recibos SHA-256; comparar cotas y
    métricas con una ejecución FUSION independiente antes de uso productivo.
 
 La autorización CNIG depende del servidor. Esta versión permite el clic humano oficial;

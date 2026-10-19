@@ -33,6 +33,11 @@ class Job(QgsTask):
             return True
         except Exception as e:
             self.message = str(e)
+            backup=getattr(self.engine,'local_diagnostic_path',None)
+            if backup and str(backup) not in self.message:
+                self.message+='\nDiagnóstico alternativo: '+str(backup)
+            alternate_log=getattr(self.engine,'local_log_path',None)
+            if alternate_log:self.message+='\nRegistro alternativo: '+str(alternate_log)
             self.result_dir = str(getattr(self.engine,'run',''))
             return False
 
@@ -45,7 +50,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.1')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.2')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))

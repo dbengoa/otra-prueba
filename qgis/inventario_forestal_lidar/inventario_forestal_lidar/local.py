@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 import math
 import struct
+import time
+import errno
+from .storage import LASBlockReader,transient,pause
 from .core import Tile, digest, intersects, las_header
 
 SUPPORTED_CRS = (25828,25829,25830,25831,4083)
@@ -28,7 +31,7 @@ class Metadata:
     crs_present: bool
 
 
-def metadata(path):
+def _metadata_once(path):
     path = Path(path).resolve()
     count = las_header(path, True)
     size = path.stat().st_size
@@ -109,6 +112,18 @@ def metadata(path):
                     bool(h[104]&128),scales,offsets,next(iter(epsgs),None),next(iter(wkts),''),crs_present)
 
 
+def metadata(path,check=lambda:None,progress=lambda text:None):
+    for attempt in range(4):
+        check()
+        try:return _metadata_once(path)
+        except OSError as error:
+            if attempt<3 and (transient(error) or error.errno==errno.EINVAL):
+                progress('Lectura de cabecera LAS '+str(path)+'; reintento '+str(attempt+1)+': '+str(error))
+                pause((.2,.5,1.0)[attempt],check)
+                continue
+            raise OSError(error.errno,'Lectura de metadatos LAS '+str(path)+': '+str(error),str(path)) from error
+
+
 def resolve_epsg(info, expected, assume_missing=False):
     codes = set()
     if info.epsg:
@@ -186,7 +201,7 @@ def select_local(plots, radius, tiles):
     return list(selected.values()),mapping
 
 
-def verify_point_support(paths, plot, radius, distance=5., check=lambda:None):
+def verify_point_support(paths, plot, radius, distance=5., check=lambda:None,progress=lambda text:None):
     """Require real returns AND class-2 support near samples of the plot + halo.
 
     This is a sampled gap check, not a proof of acquisition completeness. Unfilled
@@ -209,20 +224,25 @@ def verify_point_support(paths, plot, radius, distance=5., check=lambda:None):
     ground = np.zeros(len(sx),dtype=bool)
     for path in paths:
         check()
-        info = metadata(path)
+        progress('Cobertura: leyendo '+str(path))
+        info = metadata(path,check,progress)
         if info.compressed:
             raise ValueError('La comprobación de puntos requiere LAS convertido')
         dtype = np.dtype({'names':['x','y','c','flags'],
                           'formats':['<i4','<i4','u1','u1'],
                           'offsets':[0,4,15 if info.point_format<6 else 16,15],
                           'itemsize':info.record_size})
-        with open(path,'rb') as f:
-            f.seek(info.offset)
+        with LASBlockReader(path,check,progress) as reader:
             remaining = info.count
+            cursor=info.offset;last_report=time.monotonic()
             while remaining:
                 check()
-                n = min(remaining,100000)
-                block = f.read(n*info.record_size)
+                n = min(remaining,max(1,(1024*1024)//info.record_size))
+                block = reader.read_exact(cursor,n*info.record_size)
+                cursor+=len(block)
+                if time.monotonic()-last_report>=10:
+                    progress('Cobertura: '+str(path)+' · '+format(100*(info.count-remaining+n)/info.count,'.1f')+'% leído')
+                    last_report=time.monotonic()
                 if len(block) != n*info.record_size:
                     raise ValueError('LAS truncado durante lectura: '+str(path))
                 remaining -= n

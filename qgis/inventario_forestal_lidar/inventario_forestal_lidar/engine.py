@@ -11,7 +11,9 @@ import subprocess
 import time
 import threading
 import uuid
+import traceback
 from .fusion import PROGRAMS, program, invocation, failure_message
+from .storage import StateStorageError, diagnostic_root
 from .core import (Cancelled, AuthorizationRequired, DETAIL, VERSION, token,
                    validate, read_index, select_tiles, las_header, digest, commands, atomic_json)
 
@@ -51,15 +53,51 @@ class Engine:
         if self.cancelled():
             raise Cancelled('Cancelado por el usuario')
 
-    def log(self, text):
-        with self.logfile.open('a', encoding='utf-8') as f:
-            f.write(datetime.now(timezone.utc).isoformat()+' '+text+'\n')
+    def diagnostics_directory(self):
+        directory=diagnostic_root()/self.run.name
+        directory.mkdir(parents=True,exist_ok=True)
+        return directory
+
+    def backup_state(self):
+        target=self.diagnostics_directory()/'estado.json'
+        self.state['diagnostic_state']=str(target)
+        atomic_json(target,self.state)
+        self.local_diagnostic_path=target
+        return target
+
+    def save_state(self,final=False):
+        try:
+            atomic_json(self.run/'estado.json',self.state,check=(lambda:None) if final else self.check)
+        except OSError as error:
+            self.state['state_storage_error']={'path':str(self.run/'estado.json'),'error':str(error)}
+            try:
+                backup=self.backup_state()
+                detail='Diagnóstico alternativo: '+str(backup)
+            except OSError as backup_error:
+                detail='Tampoco se pudo guardar el diagnóstico alternativo: '+str(backup_error)
+            raise StateStorageError('No se pudo guardar el estado en '+str(self.run)+
+                ' tras los reintentos de escritura. Compruebe la disponibilidad de la carpeta/unidad. '+
+                detail+'. Los LAZ y LAS completos se conservan.') from error
+
+    def log(self,text):
+        line=datetime.now(timezone.utc).isoformat()+' '+text+'\n'
+        try:
+            with self.logfile.open('a',encoding='utf-8') as handle:handle.write(line)
+        except OSError as error:
+            # Reporting a failure must never replace the original exception.
+            self.state['logging_error']=str(error)
+            try:
+                target=self.diagnostics_directory()/'proceso.log'
+                with target.open('a',encoding='utf-8') as handle:handle.write(line)
+                self.local_log_path=target
+            except OSError as backup_error:
+                self.state['local_logging_error']=str(backup_error)
 
     def run_command(self, args):
         self.check()
         args,launch=invocation(args,self.logfile)
         self.state['active_command']=list(map(str,args))
-        if hasattr(self,'run'):atomic_json(self.run/'estado.json',self.state)
+        if hasattr(self,'run'):self.save_state()
         self.log('COMANDO '+subprocess.list2cmdline(args))
         started=time.monotonic();last_report=started
         with self.logfile.open('a', encoding='utf-8') as f:
@@ -92,7 +130,7 @@ class Engine:
         self.state['phase']=name
         self.state['active_plot']=plot
         self.state.pop('active_command',None)
-        atomic_json(self.run/'estado.json',self.state)
+        self.save_state()
         self.progress(self._last_progress,name+(' · parcela '+plot if plot is not None else ''))
 
     def download(self, tile, destination):
@@ -169,10 +207,22 @@ class Engine:
                 message='Fallo en '+self.state['phase']+(' · parcela '+self.state['active_plot'] if self.state.get('active_plot') is not None else '')+': '+message
             self.state.update(status='failed', error=message)
             self.log('ERROR '+message)
+            if self.state.get('phase')=='Comprobación de cobertura':
+                self.log('DETALLE DE COBERTURA\n'+traceback.format_exc())
             raise RuntimeError(message) from None
         finally:
             self.state['finished_utc'] = datetime.now(timezone.utc).isoformat()
-            atomic_json(self.run/'estado.json',self.state)
+            try:
+                self.save_state(final=True)
+            except StateStorageError as storage_error:
+                if self.state['status'] in ('failed','cancelled','authorization_required'):
+                    # Preserve the first processing/cancellation/authorization failure.
+                    self.log('AVISO AL GUARDAR ESTADO FINAL '+str(storage_error))
+                else:
+                    self.state.update(status='storage_error',calculation_status='completed',error=str(storage_error))
+                    try:self.backup_state()
+                    except OSError:pass
+                    raise RuntimeError('El cálculo terminó, pero no se pudo confirmar el estado final. '+str(storage_error)) from None
         return str(self.run)
 
     def _execute(self, root):
@@ -266,7 +316,7 @@ class Engine:
                           ('LAS reutilizado y verificado: ' if reusable else 'LAS convertido y verificado: ')+str(out)+' · '+str(source_count)+' puntos')
             paths[t.sec] = out
             self.state['tiles'].append({'sec':t.sec,'source':str(src),'name':t.name,'source_sha256':fingerprint,'las':str(out),'points':source_count,'status':'verified','reused':reusable})
-            atomic_json(self.run/'estado.json',self.state)
+            self.save_state()
         if pending:
             atomic_json(self.run/'descargas_pendientes.json',pending)
             raise AuthorizationRequired('Faltan '+str(len(pending))+' descargas oficiales. Consulte descargas_pendientes.json y reanude con Ejecutar.')
@@ -281,7 +331,8 @@ class Engine:
             if local_mode:
                 from .local import verify_point_support
                 report = verify_point_support([paths[t.sec] for t in mapping[p.id]],p,
-                    self.c['radius']+2*self.c['cell'],self.c.get('support_distance',5.),self.check)
+                    self.c['radius']+2*self.c['cell'],self.c.get('support_distance',5.),self.check,
+                    lambda text:self.progress(self._last_progress,text))
                 atomic_json(work/'cobertura.json',report)
                 self.log('COBERTURA MUESTREADA ID='+p.id+' muestras='+str(report['sample_count']))
             listing = work/'teselas.txt'
@@ -317,7 +368,7 @@ class Engine:
                 writer.writeheader()
                 writer.writerow(row)
             self.state['plots'].append({'id':p.id,'directory':work.name,'points':count,'status':'completed'})
-            atomic_json(self.run/'estado.json',self.state)
+            self.save_state()
         self.check()
         self.phase('Exportación CSV y GeoPackage')
         export_results(self.run,rows,epsg,self.check)

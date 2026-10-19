@@ -76,7 +76,7 @@ class QgisTests(unittest.TestCase):
         self.assertFalse(dialog.auth_button.isEnabled())
         self.assertEqual(dialog.auth_button.text(),'Volver a abrir ficha')
         self.assertTrue(Path(dialog.download_directory.text()).is_absolute())
-        self.assertIn('0.4.1',dialog.windowTitle())
+        self.assertIn('0.4.2',dialog.windowTitle())
         dialog.close()
 
     def test_wkt_crs_and_compound(self):

@@ -10,7 +10,7 @@ import struct
 
 CATALOG = 'https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3'
 DETAIL = 'https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec='
-VERSION = '0.4.1-experimental'
+VERSION = '0.4.2-experimental'
 
 class Cancelled(Exception):
     pass
@@ -174,8 +174,5 @@ def commands(fusion, source, las, listing, terrain, raw, normalized, metrics, p,
     }
 
 
-def atomic_json(path, data):
-    path = Path(path)
-    temp = path.with_suffix(path.suffix+'.tmp')
-    temp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
-    temp.replace(path)
+# Public API retained for callers and existing receipts.
+from .storage import atomic_json

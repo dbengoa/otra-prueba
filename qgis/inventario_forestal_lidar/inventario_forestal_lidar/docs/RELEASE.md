@@ -1,19 +1,19 @@
-0.4.1 experimental: arranque FUSION, selección de 64 bits y diagnóstico del fallo ClipData.
+0.4.2 experimental: lectura LAS más robusta y conservación del error original.
 
-El registro recibido confirma ambas conversiones LAZ→LAS y el MDT, seguido de un
-fallo 0xC0000005 de ClipData 32-bit antes de su cabecera. CloudMetrics no llegó a correr.
-La causa interna aún no está confirmada ni el arreglo validado en Windows.
+El registro recibido muestra primero errno 22 durante cobertura y después un fallo
+al escribir estado.json.tmp que ocultaba el error inicial. Los LAS se habían convertido.
+La causa interna del primer error no está confirmada con el registro disponible.
 
-Cambios: preferencia por ejecutables *64.exe instalados, conservación de la pareja
-LDA2LAS/LASzip 32-bit cuando falta LASzip64.dll, prueba ClipData /version previa al
-cálculo, directorio de arranque del ejecutable y /log propio por ejecución. Muestra
-cada LAS verificado, ruta y conteo; identifica fase/parcela/código al fallar. Añade
-aviso de actividad cada 10 s. Mantiene descarga humana Chrome y resto automático.
+Ahora se leen puntos sin búfer Python, en bloques <=1 MiB y con reapertura/reintento
+del mismo rango ante errno 22 o fallos transitorios. Se conserva cada punto; no se
+omite cobertura. El error persistente indica archivo/byte y se registra el traceback.
 
-Instalar ZIP y reiniciar QGIS. Reutilizar la misma carpeta de trabajo sin borrar LAZ
-ni LAS. Si sólo hay FUSION de 32 bits, se registra; el plugin no instala programas.
-Si persiste, conservar proceso.log, estado.json y fusion.log de la nueva ejecución.
+JSON: temporales únicos, tres reintentos adicionales breves, conservación del archivo
+anterior y diagnóstico alternativo en LOCALAPPDATA/InventarioForestalLiDAR/diagnosticos.
+Un fallo final de escritura no sustituye errores, cancelaciones o autorizaciones.
+No se crean automáticamente carpetas de red desaparecidas ni se promete reparar Q:.
 
-Ejecutado: 65 pruebas Linux/QGIS aprobadas; 55 portables y 10 omitidas sin QGIS.
-Pendiente: reproducir el caso real y comprobar ClipData/CloudMetrics en Windows.
-No se afirma que 64 bits elimine por sí solo la causa del fallo; no incluye modelos.
+Instalar ZIP, reiniciar QGIS y reanudar en la misma carpeta sin borrar LAZ, LAS o recibos.
+Validación Linux/QGIS: 82 pruebas aprobadas; 72 portables y 10 omitidas sin QGIS.
+La publicación requiere las 17 pruebas de almacenamiento/lectura en Windows CI.
+Pendiente: reproducir el caso real en Q: y la ejecución FUSION/CNIG completa en ese equipo.

@@ -104,3 +104,12 @@ No se desactiva LASzip ni se rebaja el formato LAS como supuesto arreglo.
 define 0xC0000005 como STATUS_ACCESS_VIOLATION. El código decimal recibido,
 3221225477, equivale a ese valor; no identifica la biblioteca o dato causante.
 Las medidas de compatibilidad de 0.4.1 necesitan ensayo real Windows.
+
+## Lectura y persistencia 0.4.2 — 19 de octubre de 2026
+
+El registro del usuario identifica el error inicial errno 22 durante cobertura y el
+fallo secundario al guardar estado. No ofrece un traceback de la operación fallida;
+no se asigna una causa de red, formato o permisos sin esa evidencia. La lectura por
+rangos y las escrituras transitorias se ensayan con fallos inyectados, sin atribuir al
+servidor un comportamiento comprobado sólo en fixtures. No se publica el registro
+íntegro del usuario ni sus rutas personales.
