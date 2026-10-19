@@ -1,14 +1,15 @@
-0.3.2 experimental: utiliza Google Chrome para la descarga oficial CNIG.
+0.4.0 experimental: Chrome normal con clic humano; resto automático.
 
-Corrige la selección que abría Edge aunque hubiera Chrome instalado en otra ubicación.
-Busca instalaciones de Chrome de equipo/usuario y PATH; si no existe, informa y no
-cambia automáticamente a Edge. Se mantiene la autorización oficial y la recogida
-automática del archivo. Instale el ZIP sin descomprimir y reinicie QGIS.
+El plugin consulta/deduplica PNOA3, abre cada ficha oficial en Chrome habitual y espera
+que pulse Descargar. Vigila la carpeta Descargas indicada en la interfaz y recoge
+la tesela completa sin seleccionar archivos. Conserva la descarga y la copia a
+originales/<sec>/. Continúa con LAS, MDT clase 2, ClipData, CloudMetrics y CSV/GPKG.
+Retira CDP, perfiles temporales y clics programados que CNIG detectaba. Cancelar no
+cierra Chrome ni sus descargas. Reanudar reutiliza los originales completos.
 
-Las descargas automáticas van a <carpeta de trabajo>/originales/<sec>/. Si descargó
-por su cuenta en otra ventana, puede dejar el LAZ con su nombre original en
-<carpeta de trabajo>/originales/ y volver a ejecutar, sin seleccionarlo manualmente.
+Instale el ZIP desde QGIS y reinicie. Revise que «Descargas de Chrome» coincide con
+su carpeta habitual. Cada tesela pendiente puede requerir un clic y autorización.
 
-48 pruebas Linux/QGIS aprobadas, incluidas selección de navegador y tres con Chromium
-real contra servidor local. Pendiente: validar Chrome/CNIG y FUSION reales en Windows.
-La corrección de nombres PNR sin Hxx de 0.3.1 se conserva.
+Validación: 56 pruebas Linux/QGIS aprobadas; 46 portables y 10 omitidas sin QGIS.
+Pendiente: clic/descarga real CNIG con Chrome Windows y ejecución FUSION real.
+No incluye modelización estadística ni garantiza autorización del servidor.

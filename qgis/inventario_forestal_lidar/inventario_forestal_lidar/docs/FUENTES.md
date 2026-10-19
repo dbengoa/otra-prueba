@@ -78,3 +78,13 @@ Consulta real de sólo lectura en EPSG:25830 `(523500,4653500)`: CNIG devolvió
 `PNOA-2024-PNR-523-4654-NPC01.laz`. El adaptador corregido lo aceptó, obtuvo la huella
 oficial y confirmó cobertura del círculo. Evidencia: live-cnig-pnr-plan.json y
 live-cnig-pnr-coverage.json. No se descargó LAZ ni se ejecutó FUSION en esta consulta.
+
+## Corrección de autorización 0.4.0
+
+La ficha oficial `https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec=12183731`,
+consultada el 19/10/2026, contiene comprobación de automatización (`navigator.webdriver`)
+y marca `BOT_DETECTED` frente a `HUMAN_CONFIRMED` antes del formulario POST descargaDir.
+La URL descargaDir comunicada por el usuario no es una descarga GET independiente.
+Se retira el navegador CDP y se usa Chrome habitual con clic humano, sin modificar las
+señales, formularios, CAPTCHA o firmas del portal. No se afirma una descarga real
+satisfactoria desde este entorno. El resto del flujo usa vigilancia local cancelable.

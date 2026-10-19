@@ -1,7 +1,7 @@
 """PNOA3 discovery using the actual CNIG portal protocol, verified 2026-10-18.
 
 Only catalog/footprint requests use urllib. Binary downloads ALWAYS go through
-OfficialBrowser, preserving the portal's CAPTCHA/preauthorization/licence flow.
+normal Chrome with a human click; OfficialBrowser watches completed files.
 """
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -201,11 +201,12 @@ def disk(plot,radius):
 
 
 class AutomaticSource:
-    def __init__(self,root,work,check=lambda:None,progress=lambda n,s:None,retry=None,client=None,browser_factory=OfficialBrowser):
+    def __init__(self,root,work,check=lambda:None,progress=lambda n,s:None,retry=None,client=None,browser_factory=OfficialBrowser,download_directory=None):
         self.root=Path(root);self.work=Path(work)
         self.check=check;self.progress=progress;self.retry=retry or threading.Event()
         self.client=client or Client(check)
         self.browser_factory=browser_factory
+        self.download_directory=download_directory
 
     def plan(self,plots,epsg,radius,cell,support=5.):
         to_geo,to_projected=transforms(epsg)
@@ -277,13 +278,14 @@ class AutomaticSource:
             else:missing.append((row,dest))
         if missing:
             self.progress(15,'CNIG abre Google Chrome para descarga y autorización oficial')
-            with self.browser_factory(self.work,self.check,lambda text:self.progress(15,text),self.retry) as browser:
+            options={'download_directory':self.download_directory} if self.download_directory else {}
+            with self.browser_factory(self.work,self.check,lambda text:self.progress(15,text),self.retry,**options) as browser:
                 for i,(row,dest) in enumerate(missing):
                     self.check()
                     browser.download(row,dest)
                     las_header(dest,True)
                     atomic_json(dest.with_suffix(dest.suffix+'.json'),{'series':'LIDA3','sec':row['sec'],
-                        'name':row['name'],'sha256':digest(dest,self.check),'download_flow':'official_page_browser'})
+                        'name':row['name'],'sha256':digest(dest,self.check),'download_flow':'normal_chrome_human_download_filesystem'})
                     files.append(str(dest))
                     self.progress(15+15*(i+1)/len(missing),'CNIG descarga completada '+row['name'])
         return files

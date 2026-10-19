@@ -2,9 +2,17 @@ test_acquire_download_and_resume_without_browser (test_auto_qgis.AutomaticTests.
 test_auto_engine_needs_no_user_files_or_index (test_auto_qgis.AutomaticTests.test_auto_engine_needs_no_user_files_or_index) ... skipped 'QGIS/GDAL no disponibles'
 test_query_axis_order_and_official_coverage_at_four_tile_corner (test_auto_qgis.AutomaticTests.test_query_axis_order_and_official_coverage_at_four_tile_corner) ... skipped 'QGIS/GDAL no disponibles'
 test_real_official_footprint_reprojection (test_auto_qgis.AutomaticTests.test_real_official_footprint_reprojection) ... skipped 'QGIS/GDAL no disponibles'
-test_browser_cancellation_closes_dedicated_instance (test_browser.BrowserTests.test_browser_cancellation_closes_dedicated_instance) ... skipped 'Navegador real: active LIDAR_BROWSER_TEST_EXE para test local CDP'
-test_browser_rejects_unexpected_filename (test_browser.BrowserTests.test_browser_rejects_unexpected_filename) ... skipped 'Navegador real: active LIDAR_BROWSER_TEST_EXE para test local CDP'
-test_browser_waits_for_approval_then_downloads (test_browser.BrowserTests.test_browser_waits_for_approval_then_downloads) ... skipped 'Navegador real: active LIDAR_BROWSER_TEST_EXE para test local CDP'
+test_cancel_does_not_close_chrome (test_browser.BrowserTests.test_cancel_does_not_close_chrome) ... ok
+test_changing_file_not_adopted_until_stable (test_browser.BrowserTests.test_changing_file_not_adopted_until_stable) ... ok
+test_copy_detects_source_change_and_removes_partial (test_browser.BrowserTests.test_copy_detects_source_change_and_removes_partial) ... ok
+test_existing_original_reused_without_browser (test_browser.BrowserTests.test_existing_original_reused_without_browser) ... ok
+test_html_ignored (test_browser.BrowserTests.test_html_ignored) ... ok
+test_names (test_browser.BrowserTests.test_names) ... ok
+test_normal_chrome_copy_preserves_original (test_browser.BrowserTests.test_normal_chrome_copy_preserves_original) ... ok
+test_partial_ignored (test_browser.BrowserTests.test_partial_ignored) ... ok
+test_reopen_event_opens_only_official_detail (test_browser.BrowserTests.test_reopen_event_opens_only_official_detail) ... ok
+test_symlink_ignored (test_browser.BrowserTests.test_symlink_ignored) ... ok
+test_wrong_tile_ignored (test_browser.BrowserTests.test_wrong_tile_ignored) ... ok
 test_chrome_all_windows_installations_and_path_without_edge (test_browser_selection.BrowserSelectionTests.test_chrome_all_windows_installations_and_path_without_edge) ... ok
 test_chrome_local_install_is_used_even_with_edge_elsewhere (test_browser_selection.BrowserSelectionTests.test_chrome_local_install_is_used_even_with_edge_elsewhere) ... ok
 test_actual_official_response (test_cnig.CatalogTests.test_actual_official_response) ... ok
@@ -48,6 +56,6 @@ test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_comple
 test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... skipped 'QGIS/GDAL no disponibles en este intérprete'
 
 ----------------------------------------------------------------------
-Ran 48 tests in 0.499s
+Ran 56 tests in 0.861s
 
-OK (skipped=13)
+OK (skipped=10)

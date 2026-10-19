@@ -1,21 +1,25 @@
-# Inventario forestal LiDAR — 0.3.2 experimental
+# Inventario forestal LiDAR — 0.4.0 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
 
-## Cambio 0.3.2: Google Chrome
+## Cambio 0.4.0: Chrome normal y clic humano
 
-Se utiliza Google Chrome y ya no se selecciona Microsoft Edge automáticamente. Se
-buscan las instalaciones de Chrome de equipo y de usuario; si falta, se muestra un
-error para instalarlo. El registro muestra el navegador elegido.
+El plugin abre la ficha oficial en su sesión habitual de Google Chrome. Usted pulsa
+**Descargar** y completa CAPTCHA/licencia si CNIG los solicita. El plugin detecta el
+archivo terminado y continúa automáticamente. Cada tesela pendiente puede requerir
+un clic. No abre Edge ni un navegador controlado mediante depuración.
 
-**¿Dónde guardar?** En el flujo automático no elija carpeta ni copie la dirección a
-otra ventana: use el Chrome que abre el plugin. El archivo se guarda automáticamente
-en `<carpeta de trabajo>/originales/<sec>/`. Si ya lo descargó por su cuenta, guárdelo
-con su nombre original en `<carpeta de trabajo>/originales/` (cree esa carpeta si no
-existe) y pulse Ejecutar / reanudar; también se reconoce esa ubicación plana.
-En su configuración: `Q:\LIDAR\prueba2total\originales\`. No use un nombre con `(1)`.
+**¿Dónde guardar?** En la carpeta indicada en **Descargas de Chrome**. Se inicializa
+con la carpeta Descargas de Windows, incluso si está reubicada. Si Chrome guarda en
+otra carpeta, selecciónela en ese campo antes de ejecutar; puede contener espacios.
+No cambie el nombre de la tesela. Se admiten guiones/guiones bajos y sufijos `(1)`.
+El plugin copia cada archivo completo a `<carpeta de trabajo>/originales/<sec>/`,
+conservando también el archivo de Descargas. Para su configuración la copia quedará
+en `Q:\LIDAR\prueba2total\originales\<sec>\`.
+También vigila `originales/` y la subcarpeta de la tesela si prefiere guardar allí.
+No tiene que seleccionar archivos LAZ/LAS ni pulsar otro botón después de descargarlos.
 
 ## Corrección 0.3.1
 
@@ -31,10 +35,10 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.3.2-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.4.0-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.3.2**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.4.0**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 
@@ -46,27 +50,25 @@ FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
    EPSG:4083. Reproyecte los centros antes si hace falta. No se reproyectan las nubes.
 3. Radio predeterminado: **15 m**. Carpeta absoluta sin espacios, por ejemplo
    `Q:\LIDAR\prueba2total`. Deje FUSION en `C:\FUSION` si ésa es su instalación.
-4. Pulse **Ejecutar / reanudar**. El plugin consulta PNOA3 y sus huellas, deduplica
-   teselas y abre una ventana independiente de Google Chrome para descargar.
-5. Si CNIG pide CAPTCHA, sesión o aceptación de licencia, complete **ese trámite en
-   la página oficial**. El plugin espera la descarga. Si necesita repetir el botón
-   oficial después del trámite, pulse **Continuar autorización** en QGIS.
-6. No tiene que guardar el archivo manualmente ni volver a seleccionarlo: el plugin
-   recibe la descarga, valida su cabecera y la coloca en `originales/<sec>/`.
-   Después convierte, genera el MDT, recorta/normaliza y calcula métricas.
+4. Revise **Descargas de Chrome**: debe coincidir con la carpeta donde Chrome guarda
+   los archivos. Pulse **Ejecutar / reanudar**. Se consultan PNOA3 y sus huellas.
+5. En cada ficha que se abre en **Chrome normal**, pulse **Descargar** y complete
+   cualquier autorización oficial. Si aparece «Guardar como», use la carpeta indicada
+   en QGIS, manteniendo el nombre. Espere a que termine la transferencia.
+6. El plugin reconoce la tesela, espera a que esté estable y sin `.crdownload`, valida
+   la cabecera y la copia a `originales/<sec>/`. Continúa con LAS, MDT, recortes
+   normalizados, CloudMetrics y CSV/GeoPackage automáticamente.
 
-La ventana del navegador pertenece a esta ejecución y usa un perfil temporal independiente,
-no su perfil habitual. Se cierra al finalizar o cancelar. No cierre esa ventana mientras
-se descargan teselas. El perfil temporal está en el TEMP local, incluso si los resultados
-se guardan en una unidad de red. El plugin no lee cookies, contraseñas ni tokens.
+**Volver a abrir ficha** sólo abre otra vez la ficha oficial; no activa la descarga.
+Chrome permanece abierto al terminar o cancelar. Cancelar detiene la espera y FUSION,
+pero no las descargas del navegador: puede dejarlas terminar y reanudar el plugin.
+No se leen cookies, preferencias ni credenciales de Chrome.
 
-**La autorización la decide CNIG.** Si el portal rechaza la solicitud, complete lo que
-indique en su ventana y reintente. No se resuelven ni eluden CAPTCHA, no se aceptan
-licencias automáticamente y no se llama directamente al endpoint binario para saltar
-la preautorización. Si la autorización no termina en 15 minutos, se registra el estado
-pendiente y se conservan las teselas ya descargadas para la siguiente ejecución.
-
-![Interfaz 0.3.0 verificada en Linux/QGIS](docs/interfaz-0.3.0-linux.png)
+**La autorización la decide CNIG.** El 403 comunicado correspondía a `descargaDir`,
+una ruta de formulario, no un enlace directo reutilizable. El portal comprueba si el
+navegador está automatizado. Esta versión retira CDP y los clics programados; no altera
+sus controles. No se garantiza que CNIG conceda autorización en cada equipo.
+La espera máxima es de una hora por tesela; al expirar se conserva lo descargado.
 
 ## Flujo automático implementado
 
@@ -85,12 +87,14 @@ pendiente y se conservan las teselas ya descargadas para la siguiente ejecución
    esquinas de cuatro teselas. Tolera **2 cm** en límites: las huellas verificadas del
    servicio terminan a 0,01 m de la siguiente tesela. Rechaza superficie restante sin
    cobertura superior a 0,01 m²; no exporta métricas de cobertura parcial.
-5. Abre la ficha oficial de cada tesela. Activa su botón real `bDescDir`; el propio
-   JavaScript CNIG ejecuta reCAPTCHA, `preAutorizarDescarga`, `initDescargaDir`, licencia
-   cuando proceda y el formulario de descarga. La descarga la realiza el navegador.
-6. Recoge exclusivamente el archivo de la ficha activa y comprueba su nombre y cabecera
-   LAS/LAZ. Acepta la diferencia de guiones/guiones bajos entre catálogo y descarga.
-   Lo copia por bloques a la unidad de salida y confirma el original de forma atómica.
+5. Abre la ficha oficial de cada tesela en Chrome habitual y espera el clic humano.
+   El navegador ejecuta el flujo oficial de CNIG sin intervención programada.
+6. Vigila sólo las carpetas indicadas, sin recorrido recursivo. Acepta el nombre esperado
+   (guiones/guiones bajos y sufijo de duplicado), ignora temporales, enlaces simbólicos
+   y archivos ajenos. Exige tamaño/fecha estables durante dos segundos y cabecera válida.
+   Copia por bloques cancelables y confirma en la unidad de salida; conserva la fuente.
+   Esto comprueba la entrega del archivo, no acredita su procedencia criptográficamente;
+   la conversión posterior verifica lectura y número de puntos.
 7. Reutiliza originales con cabecera válida y recibo SHA-256. Un original existente sin
    recibo se adopta con validación de cabecera y nueva huella, dejando constancia de ello.
    Se reconocen también originales planos en `originales/`, con guiones o guiones bajos.
@@ -133,42 +137,36 @@ El GeoPackage contiene centros en el CRS UTM de entrada. Las columnas `cm_` cons
 como texto los valores/diagnósticos FUSION. No se aplican filtros de altura o primer retorno
 sin una decisión posterior de modelización.
 
-El registro incluye consulta, descargas, bytes recibidos, reutilización, comandos FUSION,
-errores y cancelación. **Cancelar** interrumpe lecturas por bloques, cierra la sesión de
-navegador creada por el plugin y detiene FUSION. Las teselas completas se conservan; una
-transferencia incompleta se reinicia, sin tratar `.part` como original. Cada nueva ejecución
-recalcula métricas y reutiliza las conversiones verificadas.
+El registro incluye consulta, carpetas vigiladas, incorporación, reutilización,
+comandos FUSION, errores y cancelación. Las teselas completas se conservan; `.part`
+y `.crdownload` no se tratan como originales. Cada ejecución recalcula métricas y
+reutiliza conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado en 0.3.2:** 48 pruebas aprobadas en Linux/QGIS 3.40.6, incluidas tres con
-Chromium real contra servidor local y dos nuevas de selección de Chrome. La consulta
-real de catálogo y cobertura PNR se verificó en 0.3.1. Véanse VALIDACION y FUENTES. Por
-sí solas, las pruebas de selección no acreditan que CNIG autorice la sesión Chrome de
-su equipo; ese paso depende del portal.
+**Ejecutado en 0.4.0:** 56 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
+archivos parciales, nombres, copia, cancelación y flujo hasta GeoPackage con descarga
+humana simulada y FUSION sustituido. Con Python sin QGIS: 46 aprobadas y 10 omitidas.
+La consulta real CNIG y sus huellas se verificaron en versiones anteriores; evidencias
+en FUENTES.md. Véase VALIDACION.md para el alcance exacto.
 
-**Pendiente:** autorización reCAPTCHA y descarga LAZ real con Edge/Chrome en Windows,
-y ejecución FUSION real de extremo a extremo. El ensayo completo automatizado sustituye
-CNIG/FUSION por fixtures; no se presenta como validación real de esos cálculos o descargas.
-
-El adaptador utiliza el protocolo web que sirve el portal, **no una API pública con
-contrato de estabilidad**. Si CNIG cambia sus formularios o rechaza la autorización,
-se registra el bloqueo y se conservan los originales; no se promete que la autorización
-siempre sea concedida ni se cambia el flujo por pasos manuales de carga de archivos.
+**Pendiente en Windows:** sesión Chrome habitual, clic/autorización y LAZ real CNIG;
+carpeta Descargas reubicada, unidades de red y ejecución FUSION real completa.
+Los ensayos con fixtures no certifican esos pasos reales.
+El adaptador consulta el protocolo web del portal; no es una API pública estable.
+La modelización estadística sigue fuera de esta fase.
 
 ## Desarrollo
 
 ```sh
 python -m unittest discover -s tests -v
 QT_QPA_PLATFORM=offscreen /usr/bin/python3 -m unittest discover -s tests -v
-LIDAR_BROWSER_TEST_EXE=/ruta/chromium QT_QPA_PLATFORM=offscreen /usr/bin/python3 -m unittest discover -s tests -v
 python tools/build.py
 ```
 
-Con Python sin QGIS se ejecutan 35 pruebas y se omiten 13 de integración; con QGIS,
-45 y 3 omitidas; con navegador configurado, las 48. Los tests del navegador son sólo
-locales, no intentan superar un CAPTCHA oficial. El ZIP es determinista e incluye SHA-256.
-La CI ejecuta las pruebas portables y publica la prerelease con el ZIP correspondiente.
+El ZIP es determinista e incluye SHA-256. La CI ejecuta las pruebas portables y
+publica una versión experimental con ZIP. Las pruebas de vigilancia usan archivos
+sintéticos y el lanzamiento de Chrome se verifica sin automatizar su contenido.
 
 Consulta de diagnóstico de sólo lectura, sin descarga ni FUSION:
 

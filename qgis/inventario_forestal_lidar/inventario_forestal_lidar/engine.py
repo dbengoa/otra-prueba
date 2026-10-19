@@ -171,7 +171,7 @@ class Engine:
         if automatic_mode:
             from .cnig import AutomaticSource
             self.state['input_mode'] = 'automatic_cnig'
-            source = AutomaticSource(root,self.run,self.check,self.progress,self.retry_authorization)
+            source = AutomaticSource(root,self.run,self.check,self.progress,self.retry_authorization,download_directory=self.c.get('download_directory'))
             source_files = source.acquire(self.plots,epsg,self.c['radius'],self.c['cell'],self.c.get('support_distance',5.))
             self.state['input_mode'] = 'automatic_cnig'
         local_mode = bool(source_files)

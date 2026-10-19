@@ -9,6 +9,7 @@ from qgis.core import QgsApplication,QgsTask,QgsWkbTypes,QgsVectorLayer,QgsProje
 from qgis.gui import QgsMapLayerComboBox,QgsFieldComboBox
 from .core import Plot, CATALOG, validate
 from .engine import Engine
+from .browser import default_download_directory
 
 
 class Job(QgsTask):
@@ -44,7 +45,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.3.2')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.0')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -62,6 +63,8 @@ class Dialog(QDialog):
         self.cell.setRange(.1,20)
         self.cell.setValue(1)
         self.output = QLineEdit()
+        self.download_directory = QLineEdit(str(default_download_directory()))
+        self.download_directory.setToolTip("Carpeta donde Chrome guarda los archivos. Si usa otra, selecciónela aquí; se permiten espacios.")
         self.assume_crs = QCheckBox('Asumir CRS de parcelas sólo en archivos sin CRS (lo he comprobado)')
         self.support = QDoubleSpinBox()
         self.support.setRange(.5,20)
@@ -73,11 +76,12 @@ class Dialog(QDialog):
         form.addRow('Radio',self.radius)
         form.addRow('Celda MDT (m)',self.cell)
         form.addRow('Carpeta sin espacios',self.path_row(self.output,False))
+        form.addRow('Descargas de Chrome',self.path_row(self.download_directory,False))
         form.addRow('',self.assume_crs)
         form.addRow('Distancia máxima sin apoyo',self.support)
         form.addRow('FUSION',self.fusion)
         outer.addLayout(form)
-        outer.addWidget(QLabel('Descarga automática PNOA3 desde las parcelas: consulta CNIG → LAZ → LAS → FUSION.\nSi CNIG exige autorización, complete el paso en la ventana de Google Chrome.\nEl plugin guarda las descargas y continúa el cálculo; no necesita cargar archivos ni CSV.'))
+        outer.addWidget(QLabel('PNOA3 desde las parcelas: consulta CNIG → Chrome normal → LAZ → LAS → FUSION.\nPulse «Descargar» en Chrome y complete la autorización oficial si se solicita.\nGuarde en la carpeta indicada: el plugin detecta el archivo completo y continúa solo.'))
         buttons = QHBoxLayout()
         self.catalog = QPushButton('Ayuda / portal CNIG')
         self.catalog.clicked.connect(lambda:webbrowser.open(CATALOG))
@@ -86,7 +90,7 @@ class Dialog(QDialog):
         self.cancel_button = QPushButton('Cancelar')
         self.cancel_button.setEnabled(False)
         self.cancel_button.clicked.connect(self.cancel)
-        self.auth_button = QPushButton('Continuar autorización')
+        self.auth_button = QPushButton('Volver a abrir ficha')
         self.auth_button.setEnabled(False)
         self.auth_button.clicked.connect(self.continue_authorization)
         for button in (self.catalog,self.start,self.auth_button,self.cancel_button):
@@ -101,7 +105,7 @@ class Dialog(QDialog):
     def continue_authorization(self):
         if self.job:
             self.job.retry_authorization.set()
-            self.messages.appendPlainText('Se solicita reintentar el botón oficial de descarga, sin eludir la autorización.')
+            self.messages.appendPlainText('Se solicita volver a abrir la ficha CNIG en Chrome normal.')
 
     def path_row(self,edit,file):
         from qgis.PyQt.QtWidgets import QWidget
@@ -139,8 +143,11 @@ class Dialog(QDialog):
             output = self.output.text().strip()
             if not output or not Path(output).is_absolute():
                 raise ValueError('Seleccione una carpeta absoluta de trabajo')
+            downloads = self.download_directory.text().strip()
+            if not downloads or not Path(downloads).is_absolute():
+                raise ValueError('Indique la carpeta absoluta donde Chrome guarda las descargas')
             validate(plots,self.radius.value(),output)
-            config = {'output':output,'assume_missing_crs':self.assume_crs.isChecked(),
+            config = {'output':output,'download_directory':downloads,'assume_missing_crs':self.assume_crs.isChecked(),
                       'support_distance':self.support.value(),'fusion':self.fusion.text(),
                       'epsg':int(layer.crs().authid().split(':')[1]),'radius':self.radius.value(),'cell':self.cell.value()}
             self.job = Job(config,plots)
@@ -156,12 +163,12 @@ class Dialog(QDialog):
     def status(self,n,text):
         self.bar.setValue(int(n))
         self.messages.appendPlainText(text)
-        self.auth_button.setEnabled(self.job is not None and text.startswith('CNIG autorización:'))
+        self.auth_button.setEnabled(self.job is not None and (text.startswith('CNIG autorización:') or text.startswith('CNIG vigilando:')))
 
     def cancel(self):
         if self.job:
             self.job.cancel()
-            self.messages.appendPlainText('Cancelación solicitada; se detendrá el proceso activo.')
+            self.messages.appendPlainText('Cancelación solicitada; se detendrá el proceso activo. Chrome y sus descargas permanecen abiertos.')
 
     def finished(self,path,message):
         self.start.setEnabled(True)

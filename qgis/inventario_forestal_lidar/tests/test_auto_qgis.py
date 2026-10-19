@@ -96,14 +96,18 @@ class AutomaticTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);source_dir=root/'source';source_dir.mkdir();originals=four_tiles(source_dir)
             client,rows=self.synthetic_client()
-            class FakeOfficialBrowser:
-                def __init__(self,*args):pass
-                def __enter__(self):return self
-                def __exit__(self,*args):pass
-                def download(self,row,dest):
-                    dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(originals[int(row['sec'])-1],dest)
+            from inventario_forestal_lidar.browser import OfficialBrowser
+            downloads=root/'Chrome downloads';downloads.mkdir()
+            class HumanDownload(OfficialBrowser):
+                def __init__(self,*args,**kwargs):
+                    super().__init__(*args,**kwargs,timeout=2,poll=.001,stable_seconds=.002)
+                def navigate(self,url):
+                    # Simulate the user's official click producing a completed file.
+                    sec=int(url.rsplit('=',1)[1])
+                    row=next(row for row in rows if int(row['sec'])==sec)
+                    shutil.copyfile(originals[sec-1],downloads/row['name'])
             real_source=AutomaticSource
-            def source_factory(*args):return real_source(*args,client=client,browser_factory=FakeOfficialBrowser)
+            def source_factory(*args,**kwargs):return real_source(*args,**kwargs,client=client,browser_factory=HumanDownload)
             fusion=root/'fusion';fusion.mkdir()
             for n in ('LDA2LAS','GridSurfaceCreate','ClipData','CloudMetrics','DTM2ASCII'):(fusion/(n+'.exe')).touch()
             def fake_fusion(args):
@@ -114,7 +118,7 @@ class AutomaticTests(unittest.TestCase):
                 elif name=='ClipData':shutil.copyfile(originals[0],args[-5])
                 elif name=='CloudMetrics':Path(args[-1]).write_text('Mean\n10\n')
                 else:raise AssertionError(args)
-            config=dict(output=str(root/'output'),fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2)
+            config=dict(output=str(root/'output'),fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2,download_directory=str(downloads))
             with patch('inventario_forestal_lidar.cnig.AutomaticSource',side_effect=source_factory),patch.object(Engine,'run_command',side_effect=fake_fusion):
                 run=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
             self.assertEqual(json.loads((run/'estado.json').read_text())['input_mode'],'automatic_cnig')
