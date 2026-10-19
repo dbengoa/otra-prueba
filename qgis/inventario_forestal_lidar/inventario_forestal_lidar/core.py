@@ -10,7 +10,7 @@ import struct
 
 CATALOG = 'https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3'
 DETAIL = 'https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec='
-VERSION = '0.4.0-experimental'
+VERSION = '0.4.1-experimental'
 
 class Cancelled(Exception):
     pass
@@ -162,7 +162,8 @@ def digest(path, check=lambda:None):
 
 
 def commands(fusion, source, las, listing, terrain, raw, normalized, metrics, p, radius, zone, cell=1):
-    exe = lambda name: str(Path(fusion)/(name+'.exe'))
+    from .fusion import program
+    exe = lambda name: str(program(fusion,name))
     bounds = [format(n, '.12g') for n in (p.x-radius,p.y-radius,p.x+radius,p.y+radius)]
     return {
         'convert':[exe('LDA2LAS'),str(source),str(las)],

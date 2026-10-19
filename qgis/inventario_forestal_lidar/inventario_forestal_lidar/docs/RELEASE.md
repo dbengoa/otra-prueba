@@ -1,15 +1,19 @@
-0.4.0 experimental: Chrome normal con clic humano; resto automático.
+0.4.1 experimental: arranque FUSION, selección de 64 bits y diagnóstico del fallo ClipData.
 
-El plugin consulta/deduplica PNOA3, abre cada ficha oficial en Chrome habitual y espera
-que pulse Descargar. Vigila la carpeta Descargas indicada en la interfaz y recoge
-la tesela completa sin seleccionar archivos. Conserva la descarga y la copia a
-originales/<sec>/. Continúa con LAS, MDT clase 2, ClipData, CloudMetrics y CSV/GPKG.
-Retira CDP, perfiles temporales y clics programados que CNIG detectaba. Cancelar no
-cierra Chrome ni sus descargas. Reanudar reutiliza los originales completos.
+El registro recibido confirma ambas conversiones LAZ→LAS y el MDT, seguido de un
+fallo 0xC0000005 de ClipData 32-bit antes de su cabecera. CloudMetrics no llegó a correr.
+La causa interna aún no está confirmada ni el arreglo validado en Windows.
 
-Instale el ZIP desde QGIS y reinicie. Revise que «Descargas de Chrome» coincide con
-su carpeta habitual. Cada tesela pendiente puede requerir un clic y autorización.
+Cambios: preferencia por ejecutables *64.exe instalados, conservación de la pareja
+LDA2LAS/LASzip 32-bit cuando falta LASzip64.dll, prueba ClipData /version previa al
+cálculo, directorio de arranque del ejecutable y /log propio por ejecución. Muestra
+cada LAS verificado, ruta y conteo; identifica fase/parcela/código al fallar. Añade
+aviso de actividad cada 10 s. Mantiene descarga humana Chrome y resto automático.
 
-Validación: 56 pruebas Linux/QGIS aprobadas; 46 portables y 10 omitidas sin QGIS.
-Pendiente: clic/descarga real CNIG con Chrome Windows y ejecución FUSION real.
-No incluye modelización estadística ni garantiza autorización del servidor.
+Instalar ZIP y reiniciar QGIS. Reutilizar la misma carpeta de trabajo sin borrar LAZ
+ni LAS. Si sólo hay FUSION de 32 bits, se registra; el plugin no instala programas.
+Si persiste, conservar proceso.log, estado.json y fusion.log de la nueva ejecución.
+
+Ejecutado: 65 pruebas Linux/QGIS aprobadas; 55 portables y 10 omitidas sin QGIS.
+Pendiente: reproducir el caso real y comprobar ClipData/CloudMetrics en Windows.
+No se afirma que 64 bits elimine por sí solo la causa del fallo; no incluye modelos.

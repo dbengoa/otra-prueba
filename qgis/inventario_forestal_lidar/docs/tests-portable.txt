@@ -39,6 +39,15 @@ test_parameters (test_core.CoreTests.test_parameters) ... ok
 test_process_cancellation (test_core.CoreTests.test_process_cancellation) ... ok
 test_process_nonzero (test_core.CoreTests.test_process_nonzero) ... ok
 test_url_policy (test_core.CoreTests.test_url_policy) ... ok
+test_32_only_supported (test_fusion.FusionTests.test_32_only_supported) ... ok
+test_controlled_working_directory_and_separate_log (test_fusion.FusionTests.test_controlled_working_directory_and_separate_log) ... ok
+test_converter_preserves_working_32_bit_laszip_pair (test_fusion.FusionTests.test_converter_preserves_working_32_bit_laszip_pair) ... ok
+test_dll_error_is_distinguished (test_fusion.FusionTests.test_dll_error_is_distinguished) ... ok
+test_nonfusion_process_unchanged (test_fusion.FusionTests.test_nonfusion_process_unchanged) ... ok
+test_only_64_installation_is_accepted (test_fusion.FusionTests.test_only_64_installation_is_accepted) ... ok
+test_prefers_available_64_bit_programs (test_fusion.FusionTests.test_prefers_available_64_bit_programs) ... ok
+test_signed_and_unsigned_crash_status (test_fusion.FusionTests.test_signed_and_unsigned_crash_status) ... ok
+test_startup_crash_preserves_exact_command (test_fusion.FusionTests.test_startup_crash_preserves_exact_command) ... ok
 test_content_deduplication_and_provenance (test_local.LocalTests.test_content_deduplication_and_provenance) ... ok
 test_discovery_cancellation (test_local.LocalTests.test_discovery_cancellation) ... ok
 test_invalid_envelope_scale_record (test_local.LocalTests.test_invalid_envelope_scale_record) ... ok
@@ -56,6 +65,6 @@ test_terrain_hole_and_complete (test_qgis.QgisTests.test_terrain_hole_and_comple
 test_wkt_crs_and_compound (test_qgis.QgisTests.test_wkt_crs_and_compound) ... skipped 'QGIS/GDAL no disponibles en este intérprete'
 
 ----------------------------------------------------------------------
-Ran 56 tests in 0.861s
+Ran 65 tests in 0.866s
 
 OK (skipped=10)

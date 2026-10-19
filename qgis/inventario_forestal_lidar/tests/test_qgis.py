@@ -76,7 +76,7 @@ class QgisTests(unittest.TestCase):
         self.assertFalse(dialog.auth_button.isEnabled())
         self.assertEqual(dialog.auth_button.text(),'Volver a abrir ficha')
         self.assertTrue(Path(dialog.download_directory.text()).is_absolute())
-        self.assertIn('0.4.0',dialog.windowTitle())
+        self.assertIn('0.4.1',dialog.windowTitle())
         dialog.close()
 
     def test_wkt_crs_and_compound(self):
@@ -140,10 +140,17 @@ class QgisTests(unittest.TestCase):
                 elif name=='CloudMetrics':Path(args[-1]).write_text('Mean\n10\n')
                 else:raise AssertionError(args)
             config=dict(output=str(root/'output'),files=paths,fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2)
+            statuses=[]
             with patch.object(Engine,'run_command',side_effect=fake_fusion):
-                first=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
+                first=Path(Engine(config,[Plot('001',400000,4600000)],progress=lambda n,text:statuses.append(text)).execute())
                 conversions=len([a for a in calls if Path(a[0]).stem=='LDA2LAS'])
                 second=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
+            first_state=json.loads((first/'estado.json').read_text())
+            self.assertEqual(len(first_state['tiles']),4)
+            self.assertTrue(all(t['status']=='verified' and Path(t['las']).is_file() for t in first_state['tiles']))
+            self.assertEqual(first_state['outputs']['gpkg'],str(first/'metricas.gpkg'))
+            self.assertTrue(any('LAS convertido y verificado:' in text for text in statuses))
+            self.assertTrue(any(text.startswith('CloudMetrics') for text in statuses))
             self.assertEqual(conversions,4)
             self.assertEqual(len([a for a in calls if Path(a[0]).stem=='LDA2LAS']),4)
             self.assertNotEqual(first,second)
@@ -151,6 +158,20 @@ class QgisTests(unittest.TestCase):
             inventory=json.loads((first/'archivos_locales.json').read_text())
             self.assertEqual(len(inventory),4)
             self.assertEqual(json.loads((first/'estado.json').read_text())['input_mode'],'local_files')
+            # Reproduce the reported ClipData crash after all conversions verified.
+            from inventario_forestal_lidar.fusion import failure_message
+            failed=Engine(config,[Plot('001',400000,4600000)])
+            def fail_clip(args):
+                if Path(args[0]).stem=='ClipData':raise RuntimeError(failure_message(args[0],3221225477))
+                return fake_fusion(args)
+            with patch.object(Engine,'run_command',side_effect=fail_clip):
+                with self.assertRaisesRegex(RuntimeError,'ClipData: recorte circular.*0xC0000005'):failed.execute()
+            state=json.loads((failed.run/'estado.json').read_text())
+            self.assertEqual(state['status'],'failed')
+            self.assertEqual(state['phase'],'ClipData: recorte circular')
+            self.assertEqual(len(state['tiles']),4)
+            self.assertTrue(all(t['status']=='verified' and t['reused'] for t in state['tiles']))
+            self.assertFalse((failed.run/'metricas.csv').exists())
             self.assertEqual(before,{p:digest(p) for p in paths})
 
 if __name__=='__main__':unittest.main()

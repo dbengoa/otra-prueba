@@ -1,10 +1,47 @@
-# Inventario forestal LiDAR — 0.4.0 experimental
+# Inventario forestal LiDAR — 0.4.1 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
 
-## Cambio 0.4.0: Chrome normal y clic humano
+## Corrección 0.4.1: arranque de FUSION y diagnóstico por fase
+
+El registro real recibido confirma conversión completa de ambas teselas, MDT y
+DTM2ASCII correctos. ClipData de 32 bits termina con 3221225477 (0xC0000005) antes de
+imprimir su cabecera. CloudMetrics no había comenzado. No se atribuye todavía la
+causa a memoria insuficiente, permisos de Q:, datos ni una DLL concreta.
+
+Esta versión prefiere `ClipData64.exe` y las otras variantes `*64.exe` que estén
+instaladas. Si sólo hay ejecutables de 32 bits, lo registra y mantiene compatibilidad.
+Para LDA2LAS conserva la pareja de 32 bits si existe LASzip.dll y falta LASzip64.dll.
+El nombre del ejecutable seleccionado se muestra al empezar. No instala ni sustituye
+FUSION o sus bibliotecas.
+
+En Windows se prueba `ClipData /version` antes de descargar o convertir. Cada proceso
+arranca desde la carpeta de su ejecutable y usa `/log:<resultados>/fusion.log` en vez
+del registro compartido de C:\FUSION. No hereda los ajustes FUSION64/NOLASZIPDLL de
+QGIS; se conservan las demás variables. El cambio sólo afecta al proceso hijo.
+La selección de 64 bits y el arranque controlado son medidas de compatibilidad:
+**no está confirmado que resuelvan el fallo real comunicado**.
+
+Se informa cada LAS convertido/reutilizado, ruta y número de puntos. La conversión
+es por tesela, no por parcela. El estado guarda la correspondencia nombre original →
+LAS. En el caso comunicado, la segunda tesela está en
+`LAS/7edad52739038a39f70159cf.las`; la primera en `LAS/0cb3bff22fa084fd6f06647a.las`.
+La tabla por parcela empieza cuando todas las conversiones han sido verificadas.
+Se distingue MDT, recorte, normalización, CloudMetrics y exportación. Hay un aviso
+cada diez segundos mientras un ejecutable continúa y los fallos muestran fase,
+parcela y código. Un aviso de actividad no garantiza que el ejecutable avance;
+se puede cancelar. No se inventan métricas cuando ClipData falla.
+
+**Reanudar:** instale el ZIP 0.4.1 y reinicie QGIS. Use la misma carpeta de trabajo
+para aprovechar los LAZ y LAS existentes; no borre originales ni conversiones.
+Si vuelve a fallar, el diagnóstico necesario está en `proceso.log`, `fusion.log`
+(si el programa pudo crearlo) y `estado.json`, dentro de la nueva ejecución.
+Compruebe en C:\FUSION si está instalado ClipData64.exe con sus dependencias oficiales.
+No se recomienda desactivar antivirus ni cambiar permisos de la unidad de red.
+
+## Descarga: Chrome normal y clic humano
 
 El plugin abre la ficha oficial en su sesión habitual de Google Chrome. Usted pulsa
 **Descargar** y completa CAPTCHA/licencia si CNIG los solicita. El plugin detecta el
@@ -35,10 +72,10 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.4.0-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.4.1-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.4.0**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.4.1**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 
@@ -144,9 +181,9 @@ reutiliza conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado en 0.4.0:** 56 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
+**Ejecutado en 0.4.1:** 65 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
 archivos parciales, nombres, copia, cancelación y flujo hasta GeoPackage con descarga
-humana simulada y FUSION sustituido. Con Python sin QGIS: 46 aprobadas y 10 omitidas.
+humana simulada y FUSION sustituido. Con Python sin QGIS: 55 aprobadas y 10 omitidas.
 La consulta real CNIG y sus huellas se verificaron en versiones anteriores; evidencias
 en FUENTES.md. Véase VALIDACION.md para el alcance exacto.
 

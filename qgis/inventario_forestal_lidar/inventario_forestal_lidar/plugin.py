@@ -45,7 +45,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.0')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.1')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -174,7 +174,7 @@ class Dialog(QDialog):
         self.start.setEnabled(True)
         self.cancel_button.setEnabled(False)
         self.auth_button.setEnabled(False)
-        self.messages.appendPlainText((message or 'Completado')+'\nResultados y registro: '+path)
+        self.messages.appendPlainText((('ERROR · '+message) if message else 'Completado: CloudMetrics y CSV/GeoPackage exportados')+'\nResultados y registro: '+path)
         self.job = None
         if not message:
             layer = QgsVectorLayer(str(Path(path)/'metricas.gpkg'),'Inventario LiDAR','ogr')

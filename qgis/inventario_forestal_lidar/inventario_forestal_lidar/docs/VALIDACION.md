@@ -1,7 +1,7 @@
-# Validación 0.4.0 — 19 de octubre de 2026
+# Validación 0.4.1 — 19 de octubre de 2026
 
-Ejecutado: 56 pruebas aprobadas en Linux con QGIS 3.40.6; ninguna omitida.
-Python sin QGIS: 46 aprobadas y 10 de integración omitidas. Registros en tests-linux.txt
+Ejecutado: 65 pruebas aprobadas en Linux con QGIS 3.40.6; ninguna omitida.
+Python sin QGIS: 55 aprobadas y 10 de integración omitidas. Registros en tests-linux.txt
  y tests-portable.txt. Los avisos de Qt/GDAL no afectan al resultado.
 
 Once pruebas de vigilancia verifican nombres (guiones/bajos/sufijos), copia conservando
@@ -17,11 +17,30 @@ Se mantienen pruebas de CRS, cobertura/MDT, parámetros FUSION, nombres PNR sin 
 deduplicación, errores y cancelación. No son cálculos FUSION reales.
 
 Consultas CNIG reales de catálogo y geometrías: ejecutadas en versiones anteriores,
-evidencias conservadas en FUENTES.md. No se repitió descarga binaria CNIG en 0.4.0.
+evidencias conservadas en FUENTES.md. No se repitió descarga binaria CNIG en 0.4.1.
+
+## Regresión del fallo ClipData comunicado
+
+Nueve pruebas portables adicionales verifican selección de variantes 64/32, pareja
+LDA2LAS/LASzip, instalación sólo 64-bit, directorio de arranque, registro privado,
+variables heredadas sin modificar el entorno QGIS y códigos de error firmados o no.
+La prueba de arranque sustituye Popen; verifica el comando persistido cuando el
+proceso termina con 3221225477. No ejecuta un binario FUSION real.
+
+La integración QGIS reproduce el fallo de ClipData tras las conversiones (FUSION
+sustituido): estado failed en recorte circular, todas las teselas verificadas y
+reutilizadas, sin CSV final ni falsas métricas. Verifica también la ruta de cada
+LAS, aviso CloudMetrics y salida GeoPackage en el caso satisfactorio.
+
+El registro real del usuario prueba dos conversiones y un MDT satisfactorios con
+FUSION 4.61 de 32 bits, no una prueba satisfactoria de ClipData/CloudMetrics. No se
+ha reproducido aquí el fallo real. No se conserva su registro íntegro en el repositorio
+por contener rutas personales de red; sólo el código de error en pruebas sintéticas.
 
 ## Pendiente en Windows, con datos reales
 
-1. Instalar ZIP y reiniciar QGIS; comprobar versión 0.4.0 y carpeta Descargas.
+1. Comprobar que ClipData64.exe y dependencias oficiales están en C:\FUSION si se desea 64 bits.
+   Instalar ZIP y reiniciar QGIS; comprobar versión 0.4.1 y carpeta Descargas.
 2. Centros con cobertura PNOA3; incluir parcela entre dos teselas y esquina de cuatro.
 3. Ejecutar, comprobar Chrome habitual sin depuración. Pulsar Descargar, completar
    trámite oficial y guardar en carpeta indicada sin renombrar. No abrir descargaDir
@@ -32,7 +51,9 @@ evidencias conservadas en FUENTES.md. No se repitió descarga binaria CNIG en 0.
    reanudar debe reutilizar las teselas completas sin nueva descarga.
 6. Con FUSION 4.61 real y bibliotecas LAZ: comprobar descompresión, conteos, MDT clase 2,
    círculo y normalización ClipData, métricas y coincidencia de IDs en CSV/GPKG.
-7. Inspeccionar proceso.log, estado.json, coberturas y recibos SHA-256; comparar cotas y
+7. Si ClipData falla, comprobar fase/ejecutable/código y /version en proceso.log;
+   guardar estado.json y fusion.log. Distinguir fallo de arranque de fallo al recortar.
+8. Inspeccionar proceso.log, estado.json, coberturas y recibos SHA-256; comparar cotas y
    métricas con una ejecución FUSION independiente antes de uso productivo.
 
 La autorización CNIG depende del servidor. Esta versión permite el clic humano oficial;

@@ -88,3 +88,19 @@ La URL descargaDir comunicada por el usuario no es una descarga GET independient
 Se retira el navegador CDP y se usa Chrome habitual con clic humano, sin modificar las
 señales, formularios, CAPTCHA o firmas del portal. No se afirma una descarga real
 satisfactoria desde este entorno. El resto del flujo usa vigilancia local cancelable.
+
+## FUSION 0.4.1 — revisión del 19 de octubre de 2026
+
+Se volvió a consultar el [manual oficial 4.61](https://forsys.sefs.uw.edu/software/fusion/FUSION_manual.pdf):
+p. 19–21 (numeración impresa) documentan /version, /log:name, FUSION64 y ejecutables
+con sufijo 64. LASzip requiere DLL acorde con la arquitectura (laszip.dll/laszip64.dll).
+P. 43–47 confirman ClipData /shape:1 con lista de entrada y caja cuadrada; /dtm y
+/height normalizan alturas. No se cambia la selección de retornos ni clasificación.
+El manual contiene una advertencia histórica de ClipData 2.6 sobre escritura LAS 1.4;
+no se extrapola a la versión 4.61 ni se usa para afirmar la causa de este incidente.
+No se desactiva LASzip ni se rebaja el formato LAS como supuesto arreglo.
+
+[Microsoft NTSTATUS](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55)
+define 0xC0000005 como STATUS_ACCESS_VIOLATION. El código decimal recibido,
+3221225477, equivale a ese valor; no identifica la biblioteca o dato causante.
+Las medidas de compatibilidad de 0.4.1 necesitan ensayo real Windows.
