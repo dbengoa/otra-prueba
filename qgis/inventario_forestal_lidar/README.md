@@ -1,8 +1,21 @@
-# Inventario forestal LiDAR — 0.3.1 experimental
+# Inventario forestal LiDAR — 0.3.2 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
+
+## Cambio 0.3.2: Google Chrome
+
+Se utiliza Google Chrome y ya no se selecciona Microsoft Edge automáticamente. Se
+buscan las instalaciones de Chrome de equipo y de usuario; si falta, se muestra un
+error para instalarlo. El registro muestra el navegador elegido.
+
+**¿Dónde guardar?** En el flujo automático no elija carpeta ni copie la dirección a
+otra ventana: use el Chrome que abre el plugin. El archivo se guarda automáticamente
+en `<carpeta de trabajo>/originales/<sec>/`. Si ya lo descargó por su cuenta, guárdelo
+con su nombre original en `<carpeta de trabajo>/originales/` (cree esa carpeta si no
+existe) y pulse Ejecutar / reanudar; también se reconoce esa ubicación plana.
+En su configuración: `Q:\LIDAR\prueba2total\originales\`. No use un nombre con `(1)`.
 
 ## Corrección 0.3.1
 
@@ -15,13 +28,13 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 
 1. Instale QGIS 3.34 o posterior para Windows, preferiblemente 3.40 LTR.
 2. Instale FUSION 4.61 y sus bibliotecas LAZ en `C:\FUSION`.
-3. Tenga instalado Microsoft Edge o Google Chrome. Se necesita para ejecutar la
+3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.3.1-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.3.2-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.3.1**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.3.2**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 
@@ -34,7 +47,7 @@ FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 3. Radio predeterminado: **15 m**. Carpeta absoluta sin espacios, por ejemplo
    `Q:\LIDAR\prueba2total`. Deje FUSION en `C:\FUSION` si ésa es su instalación.
 4. Pulse **Ejecutar / reanudar**. El plugin consulta PNOA3 y sus huellas, deduplica
-   teselas y abre una ventana independiente de Edge/Chrome para descargar.
+   teselas y abre una ventana independiente de Google Chrome para descargar.
 5. Si CNIG pide CAPTCHA, sesión o aceptación de licencia, complete **ese trámite en
    la página oficial**. El plugin espera la descarga. Si necesita repetir el botón
    oficial después del trámite, pulse **Continuar autorización** en QGIS.
@@ -128,11 +141,11 @@ recalcula métricas y reutiliza las conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado en 0.3.1:** 43 pruebas aprobadas en Linux/QGIS 3.40.6 y 3 ensayos de navegador
-omitidos. Se añaden dos regresiones para nombres sin huso. Las 3 pruebas de Chromium
-real contra servidor local se ejecutaron en 0.3.0 y no se repitieron para este cambio. Consulta CNIG real HTTP 200: cuatro teselas en una esquina,
-huellas oficiales y cobertura verificadas. Véanse [VALIDACION](docs/VALIDACION.md) y
-[FUENTES](docs/FUENTES.md).
+**Ejecutado en 0.3.2:** 48 pruebas aprobadas en Linux/QGIS 3.40.6, incluidas tres con
+Chromium real contra servidor local y dos nuevas de selección de Chrome. La consulta
+real de catálogo y cobertura PNR se verificó en 0.3.1. Véanse VALIDACION y FUENTES. Por
+sí solas, las pruebas de selección no acreditan que CNIG autorice la sesión Chrome de
+su equipo; ese paso depende del portal.
 
 **Pendiente:** autorización reCAPTCHA y descarga LAZ real con Edge/Chrome en Windows,
 y ejecución FUSION real de extremo a extremo. El ensayo completo automatizado sustituye
@@ -152,8 +165,8 @@ LIDAR_BROWSER_TEST_EXE=/ruta/chromium QT_QPA_PLATFORM=offscreen /usr/bin/python3
 python tools/build.py
 ```
 
-Con Python sin QGIS se ejecutan 33 pruebas y se omiten 13 de integración; con QGIS,
-43 y 3 omitidas; con navegador configurado, las 46. Los tests del navegador son sólo
+Con Python sin QGIS se ejecutan 35 pruebas y se omiten 13 de integración; con QGIS,
+45 y 3 omitidas; con navegador configurado, las 48. Los tests del navegador son sólo
 locales, no intentan superar un CAPTCHA oficial. El ZIP es determinista e incluye SHA-256.
 La CI ejecuta las pruebas portables y publica la prerelease con el ZIP correspondiente.
 

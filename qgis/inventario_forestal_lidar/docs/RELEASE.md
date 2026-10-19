@@ -1,13 +1,14 @@
-0.3.1 experimental: corrige el bloqueo «Nomenclatura PNOA3 no reconocida».
+0.3.2 experimental: utiliza Google Chrome para la descarga oficial CNIG.
 
-Admite `PNOA-2024-PNR-523-4654-NPC01.laz` y otras variantes sin Hxx. El huso ausente
-no se usa como CRS: permanecen las comprobaciones de huellas oficiales y del CRS leído
-del archivo. Se conserva la selección de año/NPC y el rechazo de husos explícitos
-incompatibles.
+Corrige la selección que abría Edge aunque hubiera Chrome instalado en otra ubicación.
+Busca instalaciones de Chrome de equipo/usuario y PATH; si no existe, informa y no
+cambia automáticamente a Edge. Se mantiene la autorización oficial y la recogida
+automática del archivo. Instale el ZIP sin descomprimir y reinicie QGIS.
 
-Instale el ZIP sin descomprimir y reinicie QGIS. Mantiene el flujo automático CNIG →
-LAZ → LAS → FUSION → métricas, sin CSV ni selección de archivos.
+Las descargas automáticas van a <carpeta de trabajo>/originales/<sec>/. Si descargó
+por su cuenta en otra ventana, puede dejar el LAZ con su nombre original en
+<carpeta de trabajo>/originales/ y volver a ejecutar, sin seleccionarlo manualmente.
 
-43 pruebas Linux/QGIS aprobadas; 3 de navegador omitidas porque su código no cambia.
-Las pruebas de navegador de 0.3.0 se realizaron contra un servidor local. Sigue pendiente
-validar autorización/descarga y FUSION de extremo a extremo en Windows.
+48 pruebas Linux/QGIS aprobadas, incluidas selección de navegador y tres con Chromium
+real contra servidor local. Pendiente: validar Chrome/CNIG y FUSION reales en Windows.
+La corrección de nombres PNR sin Hxx de 0.3.1 se conserva.

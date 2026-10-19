@@ -44,7 +44,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.3.1')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.3.2')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -77,7 +77,7 @@ class Dialog(QDialog):
         form.addRow('Distancia máxima sin apoyo',self.support)
         form.addRow('FUSION',self.fusion)
         outer.addLayout(form)
-        outer.addWidget(QLabel('Descarga automática PNOA3 desde las parcelas: consulta CNIG → LAZ → LAS → FUSION.\nSi CNIG exige autorización, complete el paso en la ventana de Edge/Chrome.\nEl plugin guarda las descargas y continúa el cálculo; no necesita cargar archivos ni CSV.'))
+        outer.addWidget(QLabel('Descarga automática PNOA3 desde las parcelas: consulta CNIG → LAZ → LAS → FUSION.\nSi CNIG exige autorización, complete el paso en la ventana de Google Chrome.\nEl plugin guarda las descargas y continúa el cálculo; no necesita cargar archivos ni CSV.'))
         buttons = QHBoxLayout()
         self.catalog = QPushButton('Ayuda / portal CNIG')
         self.catalog.clicked.connect(lambda:webbrowser.open(CATALOG))

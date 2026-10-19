@@ -6,7 +6,7 @@ import zipfile
 root=Path(__file__).resolve().parents[1]
 output=Path(sys.argv[1]) if len(sys.argv)>1 else root/'dist'
 output.mkdir(parents=True,exist_ok=True)
-archive=output/'inventario_forestal_lidar-0.3.1-experimental.zip'
+archive=output/'inventario_forestal_lidar-0.3.2-experimental.zip'
 package=root/'inventario_forestal_lidar'
 files=[p for p in package.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc']
 with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED) as z:

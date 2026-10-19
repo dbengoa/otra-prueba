@@ -1,4 +1,4 @@
-"""Download through the official CNIG page in an isolated Edge/Chrome profile.
+"""Download through the official CNIG page in an isolated Google Chrome profile.
 
 The plugin clicks the page's real download control. It never constructs CAPTCHA
 responses, accepts licences, reads cookies, or calls the binary endpoint directly.
@@ -18,19 +18,27 @@ from .core import AuthorizationRequired, las_header
 BASE='https://centrodedescargas.cnig.es/CentroDescargas/'
 
 
-def executable():
+def chrome_candidates(windows=None,environ=None,which=None):
+    windows=os.name=='nt' if windows is None else windows
+    environ=os.environ if environ is None else environ
+    which=shutil.which if which is None else which
     candidates=[]
-    if os.name=='nt':
-        for name in ('PROGRAMFILES(X86)','PROGRAMFILES','LOCALAPPDATA'):
-            root=os.environ.get(name)
-            if root:
-                candidates.extend([Path(root)/'Microsoft/Edge/Application/msedge.exe',Path(root)/'Google/Chrome/Application/chrome.exe'])
-    for name in ('msedge','chrome','chromium','chromium-browser','google-chrome'):
-        found=shutil.which(name)
+    if windows:
+        for name in ('PROGRAMFILES','PROGRAMFILES(X86)','LOCALAPPDATA'):
+            root=environ.get(name)
+            if root:candidates.append(Path(root)/'Google/Chrome/Application/chrome.exe')
+    names=('chrome','google-chrome','google-chrome-stable')
+    if not windows:names+=('chromium','chromium-browser')
+    for name in names:
+        found=which(name)
         if found:candidates.append(Path(found))
-    for path in candidates:
+    return list(dict.fromkeys(candidates))
+
+
+def executable():
+    for path in chrome_candidates():
         if path.is_file():return str(path)
-    raise RuntimeError('No se encontró Microsoft Edge o Google Chrome. Instale uno para la autorización oficial CNIG.')
+    raise RuntimeError('No se encontró Google Chrome. Instale Chrome y vuelva a ejecutar; esta versión no cambia automáticamente a Microsoft Edge.')
 
 
 class OfficialBrowser:
@@ -52,7 +60,9 @@ class OfficialBrowser:
             self.__exit__(None,None,None);raise
 
     def launch(self):
-        args=[executable(),'--remote-debugging-port=0','--remote-debugging-address=127.0.0.1',
+        program=executable()
+        self.progress('CNIG navegador: Google Chrome ('+Path(program).name+')')
+        args=[program,'--remote-debugging-port=0','--remote-debugging-address=127.0.0.1',
               '--user-data-dir='+str(self.profile),'--no-first-run','--no-default-browser-check',
               '--disable-background-mode','--new-window','about:blank']
         if self.headless:args.insert(1,'--headless=new')

@@ -1,27 +1,19 @@
-# Validación 0.3.1 — 19 de octubre de 2026
+# Validación 0.3.2 — 19 de octubre de 2026
 
-Corregido el error de Windows «Nomenclatura PNOA3 no reconocida» para
-`PNOA-2024-PNR-523-4654-NPC01.laz`, causado por exigir Hxx en el nombre.
+48 pruebas aprobadas en Linux con QGIS 3.40.6 y Chromium headless contra servidor local.
+Dos regresiones nuevas comprueban que se buscan todas las instalaciones de Chrome sin
+intercalar Edge, y que Chrome del usuario se elige aunque exista Edge en Program Files.
+Si sólo existe Edge se informa de que falta Chrome; no se abre Edge como alternativa.
 
-Ejecutado en Linux con QGIS 3.40.6: **43 pruebas aprobadas y 3 omitidas** (navegador).
-Se añaden dos regresiones: variante exacta de la captura, y comparación de ediciones
-con/sin huso conservando el rechazo de husos conocidos incompatibles. Siguen pasando
-las pruebas de CRS de metadatos, geometría oficial, descarga simulada e integración.
+Se repitieron los tres ensayos CDP con Chromium real: aprobación simulada antes de
+la transferencia, rechazo de nombre inesperado y cancelación/cierre. Son ensayos
+contra un servidor local con LAS sintético, no autorización ni descarga CNIG real.
+Se mantienen las pruebas de originales planos (guiones/guiones bajos), caché, CRS,
+PNR sin Hxx, cobertura y métricas/exportación con FUSION sustituido por fixtures.
 
-La ausencia de Hxx nunca se convierte en una declaración de CRS. Tras la descarga se
-sigue leyendo el CRS real y se rechazan discrepancias, incluso con la casilla de asumir
-CRS activada cuando ya existe un CRS declarado. Sólo se usa el huso de la consulta para
-agrupar candidatos sin Hxx; la huella oficial y los metadatos siguen siendo obligatorios.
+La CI ejecuta 35 pruebas portables y omite 13 de integración. Registro: tests-linux.txt.
+La consulta CNIG real de la tesela PNR se ejecutó en 0.3.1; evidencias en FUENTES.md.
 
-Las tres pruebas Chromium contra servidor local pasaron en 0.3.0 y no se repitieron:
-el código del navegador no ha cambiado. La CI de 0.3.1 ejecuta 33 pruebas portables y
-omite 13 de integración. Registro actual: tests-linux.txt.
-
-Pendiente: ejecución de este caso de usuario en Windows, autorización/descarga CNIG
-real y FUSION real de extremo a extremo. La consulta de catálogo/huellas no acredita
-una descarga ni los cálculos FUSION. Se mantienen los límites documentados del protocolo
-web CNIG y los controles de cobertura y apoyo de puntos.
-
-Comprobación CNIG real de sólo lectura: consulta de la tesela PNR reportada,
-aceptación del nombre exacto y verificación de su huella/cobertura aprobadas.
-Evidencia en live-cnig-pnr-plan.json y live-cnig-pnr-coverage.json.
+Pendiente: verificar Google Chrome de Windows con CNIG y sus autorizaciones, y FUSION
+real de extremo a extremo. No se asegura que cambiar de navegador baste para que CNIG
+conceda la autorización. Se conservan los originales al cancelar o encontrar errores.

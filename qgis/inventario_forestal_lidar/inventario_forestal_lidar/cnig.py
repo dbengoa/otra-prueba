@@ -276,7 +276,7 @@ class AutomaticSource:
                 files.append(str(dest));self.progress(15,'CNIG reutiliza '+row['name'])
             else:missing.append((row,dest))
         if missing:
-            self.progress(15,'CNIG abre Edge/Chrome para descarga y autorización oficial')
+            self.progress(15,'CNIG abre Google Chrome para descarga y autorización oficial')
             with self.browser_factory(self.work,self.check,lambda text:self.progress(15,text),self.retry) as browser:
                 for i,(row,dest) in enumerate(missing):
                     self.check()
