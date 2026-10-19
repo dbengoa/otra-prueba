@@ -1,0 +1,55 @@
+name: Modelizacion forestal LiDAR experimental
+on:
+  push:
+    branches: [experimental/modelizacion-lidar-0.1.0]
+    paths:
+      - 'modelizacion_lidar/**'
+      - '.github/workflows/modelizacion-lidar.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      MPLCONFIGDIR: ${{ runner.temp }}/matplotlib
+    defaults:
+      run:
+        working-directory: modelizacion_lidar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Unit and CSV integration tests
+        run: python -m unittest discover -s . -p "test_*.py" -v
+      - name: Nested validation and plots on synthetic data
+        run: python modelizacion_lidar.py ajustar --campo ejemplo_sintetico/campo.csv --lidar ejemplo_sintetico/metricas.csv --salida ci_resultados --objetivos V_ha Hdom --preseleccion 3 --max-predictores 2
+      - name: Predict without recalibration
+        run: python modelizacion_lidar.py predecir --modelos ci_resultados/modelos.json --lidar ejemplo_sintetico/metricas.csv --salida ci_predicciones.csv
+  release:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build portable ZIP
+        run: python modelizacion_lidar/build.py modelizacion_lidar/dist
+      - name: Publish experimental script
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="modelizacion-v0.1.0-experimental-${GITHUB_SHA:0:7}"
+          gh release create "$tag" modelizacion_lidar/dist/modelizacion_lidar-0.1.0-experimental.zip modelizacion_lidar/dist/modelizacion_lidar-0.1.0-experimental.zip.sha256 \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Modelización forestal LiDAR 0.1.0 — script experimental" \
+            --notes-file modelizacion_lidar/RELEASE.md

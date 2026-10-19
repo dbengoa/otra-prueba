@@ -1,0 +1,48 @@
+test_bias_sign_and_rmse (test_modelizacion.ModelsTests.test_bias_sign_and_rmse) ... ok
+test_constant_target_selects_baseline_and_no_two_plot_calibration (test_modelizacion.ModelsTests.test_constant_target_selects_baseline_and_no_two_plot_calibration) ... ok
+test_corrupt_models_are_not_silently_used (test_modelizacion.ModelsTests.test_corrupt_models_are_not_silently_used) ... 2026-10-19 08:55:56,033 ERROR Dimensiones inconsistentes en modelos.json
+ok
+test_decimal_comma_and_duplicate_headers (test_modelizacion.ModelsTests.test_decimal_comma_and_duplicate_headers) ... ok
+test_full_csv_fit_predict_and_preserve_inputs (test_modelizacion.ModelsTests.test_full_csv_fit_predict_and_preserve_inputs) ... 2026-10-19 08:55:56,072 INFO V_ha: repetición 1/1, partición externa 1/5
+2026-10-19 08:55:56,169 INFO V_ha: repetición 1/1, partición externa 2/5
+2026-10-19 08:55:56,262 INFO V_ha: repetición 1/1, partición externa 3/5
+2026-10-19 08:55:56,362 INFO V_ha: repetición 1/1, partición externa 4/5
+2026-10-19 08:55:56,439 INFO V_ha: repetición 1/1, partición externa 5/5
+2026-10-19 08:55:56,632 INFO V_ha: V_ha = 1.92549642922 * [cm_Elev P90]^(1.46008631542) * [cm_Canopy relief ratio]^(0.711534020865)
+2026-10-19 08:55:56,634 INFO Hdom: repetición 1/1, partición externa 1/5
+2026-10-19 08:55:56,717 INFO Hdom: repetición 1/1, partición externa 2/5
+2026-10-19 08:55:56,801 INFO Hdom: repetición 1/1, partición externa 3/5
+2026-10-19 08:55:56,904 INFO Hdom: repetición 1/1, partición externa 4/5
+2026-10-19 08:55:57,048 INFO Hdom: repetición 1/1, partición externa 5/5
+2026-10-19 08:55:57,246 INFO Hdom: Hdom = 1.08460016842 + (1.10978530314) * [cm_Elev P90]
+2026-10-19 08:55:57,376 ERROR Use una carpeta de salida nueva o vacía; no se sobrescriben resultados
+ok
+test_group_folds_do_not_mix_group_or_repeat_observations (test_modelizacion.ModelsTests.test_group_folds_do_not_mix_group_or_repeat_observations) ... ok
+test_ids_preserve_zeros_and_normalization_detects_collisions (test_modelizacion.ModelsTests.test_ids_preserve_zeros_and_normalization_detects_collisions) ... ok
+test_imputation_uses_training_median_only (test_modelizacion.ModelsTests.test_imputation_uses_training_median_only) ... ok
+test_invalid_numeric_data_and_options_fail (test_modelizacion.ModelsTests.test_invalid_numeric_data_and_options_fail) ... ok
+test_linear_coefficients_and_predictions_original_units (test_modelizacion.ModelsTests.test_linear_coefficients_and_predictions_original_units) ... ok
+test_nested_predictions_never_use_external_target (test_modelizacion.ModelsTests.test_nested_predictions_never_use_external_target) ... 2026-10-19 08:55:57,393 INFO V_ha: repetición 1/2, partición externa 1/4
+2026-10-19 08:55:57,405 INFO V_ha: repetición 1/2, partición externa 2/4
+2026-10-19 08:55:57,417 INFO V_ha: repetición 1/2, partición externa 3/4
+2026-10-19 08:55:57,430 INFO V_ha: repetición 1/2, partición externa 4/4
+2026-10-19 08:55:57,451 INFO V_ha: repetición 2/2, partición externa 1/4
+2026-10-19 08:55:57,468 INFO V_ha: repetición 2/2, partición externa 2/4
+2026-10-19 08:55:57,485 INFO V_ha: repetición 2/2, partición externa 3/4
+2026-10-19 08:55:57,505 INFO V_ha: repetición 2/2, partición externa 4/4
+ok
+test_power_does_not_silently_shift_zeros_or_negative_values (test_modelizacion.ModelsTests.test_power_does_not_silently_shift_zeros_or_negative_values) ... ok
+test_power_equation_and_retransformation (test_modelizacion.ModelsTests.test_power_equation_and_retransformation) ... ok
+test_prediction_flags_nonpositive_extrapolation_imputation_and_negative (test_modelizacion.ModelsTests.test_prediction_flags_nonpositive_extrapolation_imputation_and_negative) ... ok
+test_ranking_is_refit_within_every_internal_training (test_modelizacion.ModelsTests.test_ranking_is_refit_within_every_internal_training) ... ok
+test_unmatched_ids_fail_with_audit (test_modelizacion.ModelsTests.test_unmatched_ids_fail_with_audit) ... 2026-10-19 08:55:57,661 ERROR IDs no coincidentes; revise auditoria_union.json o autorice el cruce parcial con --permitir-no-coincidentes
+ok
+test_vif_rejects_collinear_covariates (test_modelizacion.ModelsTests.test_vif_rejects_collinear_covariates) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 1.644s
+
+OK
+Resultados: /tmp/tmppd3n9x9i/out
+Predicciones: /tmp/tmppd3n9x9i/pred.csv
+Predicciones: /tmp/tmpb5yzk8n8/pred.csv

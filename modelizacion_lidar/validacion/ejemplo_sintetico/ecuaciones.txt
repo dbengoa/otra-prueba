@@ -1,0 +1,7 @@
+V_ha = 1.96675183646 * [cm_Elev P90]^(1.45313645738) * [cm_Canopy relief ratio]^(0.727462063626)
+
+G_ha = 5.24852551268 + (0.862014489196) * [cm_Elev P90] + (11.4530368292) * [cm_Canopy relief ratio]
+
+N_ha = 212.733392541 + (23.796091053) * [densidad_retornos_m2] + (330.556856051) * [cm_Canopy relief ratio]
+
+Hdom = 1.13992098503 + (1.1075157549) * [cm_Elev P90]
