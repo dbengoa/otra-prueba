@@ -10,7 +10,7 @@ import struct
 
 CATALOG = 'https://centrodedescargas.cnig.es/CentroDescargas/catalogo.do?Serie=LIDA3'
 DETAIL = 'https://centrodedescargas.cnig.es/CentroDescargas/detalleArchivo?sec='
-VERSION = '0.4.2-experimental'
+VERSION = '0.4.3-experimental'
 
 class Cancelled(Exception):
     pass
@@ -161,7 +161,8 @@ def digest(path, check=lambda:None):
     return h.hexdigest()
 
 
-def commands(fusion, source, las, listing, terrain, raw, normalized, metrics, p, radius, zone, cell=1):
+def commands(fusion, source, las, listing, terrain, raw, normalized, metrics, p, radius, zone, cell=1, height_cutoff=None):
+    height_cutoff = validate_height_cutoff(height_cutoff)
     from .fusion import program
     exe = lambda name: str(program(fusion,name))
     bounds = [format(n, '.12g') for n in (p.x-radius,p.y-radius,p.x+radius,p.y+radius)]
@@ -170,9 +171,41 @@ def commands(fusion, source, las, listing, terrain, raw, normalized, metrics, p,
         'terrain':[exe('GridSurfaceCreate'),'/class:2',str(terrain),str(cell),'M','M','1',str(zone),'0','0',str(listing)],
         'raw':[exe('ClipData'),'/shape:1',str(listing),str(raw),*bounds],
         'normalize':[exe('ClipData'),'/shape:1','/dtm:'+str(terrain),'/height',str(listing),str(normalized),*bounds],
-        'metrics':[exe('CloudMetrics'),'/new',str(normalized),str(metrics)],
+        'metrics':[exe('CloudMetrics'),'/new',*(['/minht:'+format(height_cutoff,'.12g')] if height_cutoff is not None else []),str(normalized),str(metrics)],
     }
 
 
 # Public API retained for callers and existing receipts.
 from .storage import atomic_json
+
+
+def validate_height_cutoff(value):
+    """None disables filtering; zero explicitly selects returns above ground."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise ValueError('Altura de corte inválida')
+    value = float(value)
+    if not math.isfinite(value) or value < 0:
+        raise ValueError('La altura de corte debe ser finita y mayor o igual a 0 m')
+    return value
+
+
+def metrics_row(plot, radius, total_count, result, height_cutoff=None):
+    cutoff = validate_height_cutoff(height_cutoff)
+    selected = total_count
+    if cutoff is not None:
+        counts = [v for k,v in result.items() if k.strip().lower().startswith('total return count above ')]
+        if len(counts) != 1:
+            raise ValueError('CloudMetrics no informó el número de retornos sobre el corte para ID '+plot.id)
+        selected = int(counts[0])
+        if not 0 < selected <= total_count:
+            raise ValueError('Sin retornos válidos sobre la altura de corte para ID '+plot.id)
+        minimum = float(result['Elev minimum'])
+        if not math.isfinite(minimum) or minimum < cutoff:
+            raise ValueError('CloudMetrics no respetó la altura de corte para ID '+plot.id)
+    return {'parcela_id':plot.id, 'x':plot.x, 'y':plot.y, 'radio_m':radius,
+            'n_puntos':total_count, 'n_puntos_metricas':selected,
+            'altura_corte_m':cutoff if cutoff is not None else '',
+            'filtro_altura':'mayor_que' if cutoff is not None else 'sin_filtro',
+            **{'cm_'+k:v for k,v in result.items()}}

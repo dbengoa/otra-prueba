@@ -84,3 +84,15 @@ En la primera ejecución Windows, la prueba de escritores concurrentes reprodujo
 WinError 5 al reemplazar el JSON. Se añadió reintento acotado también para ese código,
 que puede corresponder a un bloqueo de reemplazo. Una denegación persistente se
 sigue notificando sin cambiar permisos; se comprueba que mantiene el JSON anterior.
+
+
+## Versión 0.4.3 — corte de altura (19-10-2026)
+
+Ejecutadas 90 pruebas aprobadas en Linux con QGIS 3.40.6. Las nuevas comprobaciones
+incluyen /minht sólo en CloudMetrics, umbral cero/fractional/desactivado, parámetros
+inválidos, recuentos y metadatos, ausencia de retornos, controles de la interfaz y
+flujo automático con FUSION simulado que exporta el corte a CSV y GeoPackage.
+No se ejecutó FUSION real ni CloudMetrics.exe en Linux. Pendiente: instalación y
+flujo real en Windows, y comprobar los estadísticos numéricos filtrados con FUSION
+4.61 sobre datos reales. El manual oficial 4.61 respalda /minht; /above no sustituye
+el filtrado de las estadísticas.

@@ -92,6 +92,12 @@ class AutomaticTests(unittest.TestCase):
             self.assertEqual(before,{p:digest(p) for p in originals})
 
     def test_auto_engine_needs_no_user_files_or_index(self):
+        self.run_auto_engine()
+
+    def test_auto_engine_filtered_metrics_export_and_preservation(self):
+        self.run_auto_engine(2)
+
+    def run_auto_engine(self, cutoff=None):
         from inventario_forestal_lidar.engine import Engine
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);source_dir=root/'source';source_dir.mkdir();originals=four_tiles(source_dir)
@@ -116,14 +122,31 @@ class AutomaticTests(unittest.TestCase):
                 elif name=='GridSurfaceCreate':Path(args[2]).write_bytes(b'mocked DTM')
                 elif name=='DTM2ASCII':Path(args[-1]).write_text('ncols 100\nnrows 100\nxllcorner 399950\nyllcorner 4599950\ncellsize 1\nNODATA_value -9999\n'+(' '.join(['100']*100)+'\n')*100)
                 elif name=='ClipData':shutil.copyfile(originals[0],args[-5])
-                elif name=='CloudMetrics':Path(args[-1]).write_text('Mean\n10\n')
+                elif name=='CloudMetrics':
+                    if cutoff is not None:
+                        self.assertIn('/minht:2',args)
+                        Path(args[-1]).write_text('Total return count above 2.00,Elev minimum,Elev mean\n1,3,10\n')
+                    else:
+                        Path(args[-1]).write_text('Mean\n10\n')
                 else:raise AssertionError(args)
-            config=dict(output=str(root/'output'),fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2,download_directory=str(downloads))
+            config=dict(output=str(root/'output'),fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2,download_directory=str(downloads),height_cutoff=cutoff)
             with patch('inventario_forestal_lidar.cnig.AutomaticSource',side_effect=source_factory),patch.object(Engine,'run_command',side_effect=fake_fusion):
                 run=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
             self.assertEqual(json.loads((run/'estado.json').read_text())['input_mode'],'automatic_cnig')
             self.assertTrue((run/'plan_cnig.json').is_file())
             self.assertTrue((run/'cobertura_cnig.json').is_file())
             self.assertTrue((run/'metricas.gpkg').is_file())
+            import csv
+            from qgis.core import QgsVectorLayer
+            with (run/'metricas.csv').open(encoding='utf-8-sig') as source:
+                row=next(csv.DictReader(source))
+            self.assertEqual(row['altura_corte_m'],'' if cutoff is None else '2.0')
+            layer=QgsVectorLayer(str(run/'metricas.gpkg'),'test','ogr')
+            feature=next(layer.getFeatures())
+            if cutoff is not None:
+                self.assertEqual(feature['altura_corte_m'],2)
+                self.assertEqual(feature['n_puntos_metricas'],1)
+                self.assertEqual(row['cm_Elev mean'],'10')
+            layer=None
 
 if __name__=='__main__':unittest.main()

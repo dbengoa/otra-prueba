@@ -113,3 +113,6 @@ no se asigna una causa de red, formato o permisos sin esa evidencia. La lectura 
 rangos y las escrituras transitorias se ensayan con fallos inyectados, sin atribuir al
 servidor un comportamiento comprobado sólo en fixtures. No se publica el registro
 íntegro del usuario ni sus rutas personales.
+
+
+0.4.3: manual oficial 4.61 consultado para CloudMetrics /minht:# (retornos sobre el corte en datos normalizados); /above:# calcula ratios de cobertura. Se usa /minht y se mantiene /class:2 en GridSurfaceCreate.

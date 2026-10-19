@@ -48,7 +48,7 @@ def export_results(directory, rows, epsg, check):
         writer.writerows(rows)
     layer = QgsVectorLayer('Point?crs=EPSG:'+str(epsg),'metricas','memory')
     provider = layer.dataProvider()
-    numeric = {'x','y','radio_m','n_puntos'}
+    numeric = {'x','y','radio_m','n_puntos','n_puntos_metricas','altura_corte_m'}
     # FUSION field names and nonnumeric diagnostic values are retained verbatim.
     provider.addAttributes([QgsField(k,QVariant.Double if k in numeric else QVariant.String) for k in keys])
     layer.updateFields()
@@ -56,7 +56,7 @@ def export_results(directory, rows, epsg, check):
         check()
         feature = QgsFeature(layer.fields())
         feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(row['x'],row['y'])))
-        feature.setAttributes([row[k] if k in numeric else str(row[k]) for k in keys])
+        feature.setAttributes([(None if row[k] == '' else row[k]) if k in numeric else str(row[k]) for k in keys])
         if not provider.addFeatures([feature])[0]:
             raise RuntimeError('No se pudo crear la geometría de resultados')
     layer.updateExtents()

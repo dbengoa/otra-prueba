@@ -15,7 +15,7 @@ import traceback
 from .fusion import PROGRAMS, program, invocation, failure_message
 from .storage import StateStorageError, diagnostic_root
 from .core import (Cancelled, AuthorizationRequired, DETAIL, VERSION, token,
-                   validate, read_index, select_tiles, las_header, digest, commands, atomic_json)
+                   validate, read_index, select_tiles, las_header, digest, commands, atomic_json, validate_height_cutoff, metrics_row)
 
 
 def official_url(url):
@@ -180,6 +180,7 @@ class Engine:
 
     def execute(self):
         validate(self.plots,self.c['radius'],self.c['output'])
+        self.c['height_cutoff'] = validate_height_cutoff(self.c.get('height_cutoff'))
         root = Path(self.c['output'])
         root.mkdir(parents=True,exist_ok=True)
         self.run = root/'resultados'/(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')+'_'+uuid.uuid4().hex[:8])
@@ -188,6 +189,8 @@ class Engine:
         self.logfile.touch()
         self.state['config'] = {k:v for k,v in self.c.items() if k not in ('index','files')}
         self.state['started_utc'] = datetime.now(timezone.utc).isoformat()
+        cutoff = self.c['height_cutoff']
+        self.log('MÉTRICAS: '+('todos los retornos' if cutoff is None else 'altura normalizada > '+format(cutoff,'.12g')+' m; CloudMetrics /minht'))
         try:
             self._execute(root)
             self.state['status'] = 'completed'
@@ -338,7 +341,7 @@ class Engine:
             listing = work/'teselas.txt'
             listing.write_text('\n'.join(str(paths[t.sec]) for t in mapping[p.id])+'\n',encoding='utf-8')
             terrain, raw, normalized, metrics = [work/n for n in ('mdt.dtm','original.las','normalizada.las','cloudmetrics.csv')]
-            cmd = commands(fusion,'','',listing,terrain,raw,normalized,metrics,p,self.c['radius'],zone,self.c['cell'])
+            cmd = commands(fusion,'','',listing,terrain,raw,normalized,metrics,p,self.c['radius'],zone,self.c['cell'],self.c.get('height_cutoff'))
             self.phase('MDT clase 2',p.id)
             self.run_command(cmd['terrain'])
             if not terrain.is_file() or not terrain.stat().st_size:
@@ -361,7 +364,8 @@ class Engine:
                 result = list(csv.DictReader(f))
             if len(result) != 1:
                 raise ValueError('CloudMetrics debe producir exactamente una fila por parcela')
-            row = {'parcela_id':p.id,'x':p.x,'y':p.y,'radio_m':self.c['radius'],'n_puntos':count,**{'cm_'+k:v for k,v in result[0].items()}}
+            row = metrics_row(p,self.c['radius'],count,result[0],self.c.get('height_cutoff'))
+            self.log('RETORNOS MÉTRICAS ID='+p.id+' total='+str(count)+' usados='+str(row['n_puntos_metricas']))
             rows.append(row)
             with (work/'metricas.csv').open('w',encoding='utf-8-sig',newline='') as f:
                 writer = csv.DictWriter(f,fieldnames=list(row))

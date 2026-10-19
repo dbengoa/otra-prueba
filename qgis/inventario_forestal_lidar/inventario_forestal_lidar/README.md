@@ -1,8 +1,37 @@
-# Inventario forestal LiDAR — 0.4.2 experimental
+# Inventario forestal LiDAR — 0.4.3 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
+
+## Novedad 0.4.3: altura de corte configurable
+
+La opción **Aplicar altura de corte a las métricas**, activada inicialmente,
+usa **2 m** por defecto. Puede elegir otro valor (incluido 0 m) o desactivar
+la casilla para incluir todos los retornos. Un corte de 0 m sigue excluyendo
+alturas no superiores a cero; no equivale a desactivar el filtro.
+
+El corte se aplica a alturas ya normalizadas mediante **CloudMetrics /minht:h**.
+No se aplica al MDT de clase 2 ni elimina puntos de los archivos originales,
+LAS convertidos o normalizada.las. No se confunde con /above (cobertura).
+Se mantiene el prefijo de métricas `cm_` para el programa de modelización.
+
+CSV y GeoPackage incorporan `altura_corte_m` (vacío/NULL si no se filtra),
+`filtro_altura` (mayor_que/sin_filtro) y `n_puntos_metricas` (retornos usados).
+`n_puntos` conserva el total de la nube circular normalizada. CloudMetrics
+conserva sus nombres originales de columnas, incluidos los recuentos filtrados.
+El comando y el filtro se guardan en proceso.log y estado.json.
+Sin retornos por encima del corte, se detiene indicando el ID; no se inventan
+estadísticas ni se eliminan parcelas silenciosamente.
+
+Para actualizar: instale **inventario_forestal_lidar-0.4.3-experimental.zip**,
+reinicie QGIS, seleccione la misma carpeta de trabajo y el corte deseado y
+pulse Ejecutar/reanudar. Reutiliza LAZ/LAS verificados; calcula de nuevo las
+parcelas en una nueva carpeta de resultados. No borre los originales ni
+mezcle resultados con cortes distintos para calibrar modelos.
+
+La opción está diseñada con el manual oficial FUSION 4.61, CloudMetrics,
+páginas impresas 49–53: [manual oficial](https://forsys.sefs.uw.edu/software/fusion/FUSION_manual.pdf).
 
 ## Corrección 0.4.2: lectura LAS y conservación del error original
 
@@ -120,10 +149,10 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.4.2-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.4.3-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.4.2**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.4.3**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 

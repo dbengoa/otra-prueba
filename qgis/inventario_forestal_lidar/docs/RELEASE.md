@@ -1,19 +1,16 @@
-0.4.2 experimental: lectura LAS más robusta y conservación del error original.
+0.4.3 experimental: altura de corte configurable para métricas LiDAR.
 
-El registro recibido muestra primero errno 22 durante cobertura y después un fallo
-al escribir estado.json.tmp que ocultaba el error inicial. Los LAS se habían convertido.
-La causa interna del primer error no está confirmada con el registro disponible.
+Casilla para activar/desactivar el filtro; corte inicial 2 m. CloudMetrics usa
+/minht:h sobre la nube normalizada. MDT sigue usando clase 2. Se conservan todos
+los puntos en LAZ, LAS y normalizada.las. CSV y GeoPackage registran altura de
+corte, tipo de filtro y retornos usados; las métricas mantienen nombres cm_.
+Se valida el recuento filtrado y se informa del ID si no quedan retornos.
 
-Ahora se leen puntos sin búfer Python, en bloques <=1 MiB y con reapertura/reintento
-del mismo rango ante errno 22 o fallos transitorios. Se conserva cada punto; no se
-omite cobertura. El error persistente indica archivo/byte y se registra el traceback.
+Instalar ZIP y reiniciar QGIS. Reutilizar la misma carpeta y LAZ/LAS para generar
+nuevos resultados homogéneos con el corte elegido. No mezclar filtros al modelizar.
 
-JSON: temporales únicos, tres reintentos adicionales breves, conservación del archivo
-anterior y diagnóstico alternativo en LOCALAPPDATA/InventarioForestalLiDAR/diagnosticos.
-Un fallo final de escritura no sustituye errores, cancelaciones o autorizaciones.
-No se crean automáticamente carpetas de red desaparecidas ni se promete reparar Q:.
-
-Instalar ZIP, reiniciar QGIS y reanudar en la misma carpeta sin borrar LAZ, LAS o recibos.
-Validación Linux/QGIS: 83 pruebas aprobadas; 72 portables y 10 omitidas sin QGIS.
-La publicación requiere las 18 pruebas de almacenamiento/lectura en Windows CI.
-Pendiente: reproducir el caso real en Q: y la ejecución FUSION/CNIG completa en ese equipo.
+Ejecutado: 90 pruebas Linux/QGIS 3.40.6, incluidas 6 nuevas pruebas portables del
+corte, controles de interfaz y flujo con FUSION simulado + exportación CSV/GPKG.
+Pendiente: ejecución real de CloudMetrics /minht y flujo completo en Windows.
+La publicación automática comprueba almacenamiento y filtro con Python de Windows;
+esas pruebas no ejecutan FUSION ni sustituyen la comprobación real en ese equipo.

@@ -67,6 +67,10 @@ class QgisTests(unittest.TestCase):
         class Iface:
             def mainWindow(self):return window
         dialog=Dialog(Iface())
+        self.assertTrue(dialog.filter_height.isChecked())
+        self.assertEqual(dialog.height_cutoff.value(),2)
+        dialog.filter_height.setChecked(False)
+        self.assertFalse(dialog.height_cutoff.isEnabled())
         self.assertEqual(dialog.radius.value(),15)
         self.assertEqual(dialog.fusion.text(),'C:\\FUSION')
         self.assertFalse(dialog.cancel_button.isEnabled())
@@ -76,7 +80,7 @@ class QgisTests(unittest.TestCase):
         self.assertFalse(dialog.auth_button.isEnabled())
         self.assertEqual(dialog.auth_button.text(),'Volver a abrir ficha')
         self.assertTrue(Path(dialog.download_directory.text()).is_absolute())
-        self.assertIn('0.4.2',dialog.windowTitle())
+        self.assertIn('0.4.3',dialog.windowTitle())
         dialog.close()
 
     def test_wkt_crs_and_compound(self):

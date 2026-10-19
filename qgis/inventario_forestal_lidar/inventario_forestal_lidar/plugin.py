@@ -50,7 +50,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.2')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.3')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -67,6 +67,15 @@ class Dialog(QDialog):
         self.cell = QDoubleSpinBox()
         self.cell.setRange(.1,20)
         self.cell.setValue(1)
+        self.filter_height = QCheckBox('Aplicar altura de corte a las métricas')
+        self.filter_height.setChecked(True)
+        self.height_cutoff = QDoubleSpinBox()
+        self.height_cutoff.setDecimals(2)
+        self.height_cutoff.setRange(0,10000)
+        self.height_cutoff.setValue(2)
+        self.height_cutoff.setSuffix(' m')
+        self.height_cutoff.setToolTip('Sólo retornos con altura normalizada superior al corte. No filtra el MDT ni modifica los LAS originales.')
+        self.filter_height.toggled.connect(self.height_cutoff.setEnabled)
         self.output = QLineEdit()
         self.download_directory = QLineEdit(str(default_download_directory()))
         self.download_directory.setToolTip("Carpeta donde Chrome guarda los archivos. Si usa otra, selecciónela aquí; se permiten espacios.")
@@ -80,6 +89,8 @@ class Dialog(QDialog):
         form.addRow('ID único (se conserva como texto)',self.field)
         form.addRow('Radio',self.radius)
         form.addRow('Celda MDT (m)',self.cell)
+        form.addRow('',self.filter_height)
+        form.addRow('Altura de corte (retornos >)',self.height_cutoff)
         form.addRow('Carpeta sin espacios',self.path_row(self.output,False))
         form.addRow('Descargas de Chrome',self.path_row(self.download_directory,False))
         form.addRow('',self.assume_crs)
@@ -153,6 +164,7 @@ class Dialog(QDialog):
                 raise ValueError('Indique la carpeta absoluta donde Chrome guarda las descargas')
             validate(plots,self.radius.value(),output)
             config = {'output':output,'download_directory':downloads,'assume_missing_crs':self.assume_crs.isChecked(),
+                      'height_cutoff':self.height_cutoff.value() if self.filter_height.isChecked() else None,
                       'support_distance':self.support.value(),'fusion':self.fusion.text(),
                       'epsg':int(layer.crs().authid().split(':')[1]),'radius':self.radius.value(),'cell':self.cell.value()}
             self.job = Job(config,plots)
