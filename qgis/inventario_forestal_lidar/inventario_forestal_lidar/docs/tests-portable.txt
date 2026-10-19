@@ -80,8 +80,9 @@ test_missing_parent_is_not_recreated (test_storage.StorageTests.test_missing_par
 test_processing_error_not_replaced_by_final_state_failure (test_storage.StorageTests.test_processing_error_not_replaced_by_final_state_failure) ... ok
 test_success_is_not_reported_if_final_write_fails (test_storage.StorageTests.test_success_is_not_reported_if_final_write_fails) ... ok
 test_transient_missing_path_is_retried (test_storage.StorageTests.test_transient_missing_path_is_retried) ... ok
+test_windows_access_denied_replacement_is_bounded_and_retried (test_storage.StorageTests.test_windows_access_denied_replacement_is_bounded_and_retried) ... ok
 
 ----------------------------------------------------------------------
-Ran 82 tests in 0.889s
+Ran 83 tests in 0.887s
 
 OK (skipped=10)

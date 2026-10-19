@@ -1,7 +1,7 @@
 # Validación 0.4.2 — 19 de octubre de 2026
 
-Ejecutado: 82 pruebas aprobadas en Linux con QGIS 3.40.6; ninguna omitida.
-Python sin QGIS: 72 aprobadas y 10 de integración omitidas. Registros en tests-linux.txt
+Ejecutado: 83 pruebas aprobadas en Linux con QGIS 3.40.6; ninguna omitida.
+Python sin QGIS: 73 aprobadas y 10 de integración omitidas. Registros en tests-linux.txt
  y tests-portable.txt. Los avisos de Qt/GDAL no afectan al resultado.
 
 Once pruebas de vigilancia verifican nombres (guiones/bajos/sufijos), copia conservando
@@ -39,7 +39,7 @@ por contener rutas personales de red; sólo el código de error en pruebas sint�
 
 ## Regresiones de lectura y estado 0.4.2
 
-17 pruebas adicionales reproducen I/O fallida: reintento de ENOENT, temporales únicos
+18 pruebas adicionales reproducen I/O fallida: reintento de ENOENT, temporales únicos
 con escritores concurrentes, conservación de JSON previo, cancelación, disco lleno,
 carpeta desaparecida y diagnóstico alternativo. Verifican que un fallo de estado final
 no sustituye el error original, la cancelación o la autorización, y que un fallo de
@@ -50,10 +50,10 @@ mismo offset, descarte de una lectura parcial y límites de 1 MiB. Se comprueba 
 archivos fuente permanecen intactos. El error persistente conserva errno, ruta y byte.
 La prueba no reproduce la causa real de errno 22 en el servidor del usuario.
 
-El workflow ejecuta estas 17 pruebas en Windows antes de permitir la publicación;
+El workflow ejecuta estas 18 pruebas en Windows antes de permitir la publicación;
 consulte Actions para confirmar el resultado del runner de la versión descargada.
-En Linux se ejecutó además toda la suite QGIS/GDAL con 82 pruebas aprobadas. Las
-pruebas portables son 72 aprobadas y 10 omitidas por requerir QGIS.
+En Linux se ejecutó además toda la suite QGIS/GDAL con 83 pruebas aprobadas. Las
+pruebas portables son 73 aprobadas y 10 omitidas por requerir QGIS.
 
 ## Pendiente en Windows, con datos reales
 
@@ -79,3 +79,8 @@ pruebas portables son 72 aprobadas y 10 omitidas por requerir QGIS.
 
 La autorización CNIG depende del servidor. Esta versión permite el clic humano oficial;
 no pretende eludir rechazos ni ser una descarga desatendida.
+
+En la primera ejecución Windows, la prueba de escritores concurrentes reprodujo
+WinError 5 al reemplazar el JSON. Se añadió reintento acotado también para ese código,
+que puede corresponder a un bloqueo de reemplazo. Una denegación persistente se
+sigue notificando sin cambiar permisos; se comprueba que mantiene el JSON anterior.

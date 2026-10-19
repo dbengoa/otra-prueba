@@ -30,6 +30,21 @@ class StorageTests(unittest.TestCase):
                 with self.assertRaises(OSError):atomic_json(path,{'new':2},retry_delays=(0,0))
             self.assertEqual(json.loads(path.read_text()),{'old':1})
             self.assertFalse(list(Path(d).glob('*.tmp')))
+    def test_windows_access_denied_replacement_is_bounded_and_retried(self):
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/'estado.json';atomic_json(path,{'old':1});real=Path.replace;calls=0
+            denied=PermissionError(errno.EACCES,'Access is denied');denied.winerror=5
+            def locked(source,target):
+                nonlocal calls
+                calls+=1
+                if calls==1:raise denied
+                return real(source,target)
+            with patch.object(Path,'replace',locked):atomic_json(path,{'new':2},retry_delays=(0,))
+            self.assertEqual(calls,2);self.assertEqual(json.loads(path.read_text()),{'new':2})
+            with patch.object(Path,'replace',side_effect=denied) as replace:
+                with self.assertRaises(PermissionError):atomic_json(path,{'uncommitted':3},retry_delays=(0,))
+                self.assertEqual(replace.call_count,2)
+            self.assertEqual(json.loads(path.read_text()),{'new':2})
     def test_missing_parent_is_not_recreated(self):
         with tempfile.TemporaryDirectory() as d:
             path=Path(d)/'lost_share/estado.json'
@@ -55,11 +70,14 @@ class StorageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path=Path(d)/'estado.json';barrier=threading.Barrier(2);real=Path.replace;temporaries=[]
             def simultaneous(source,target):
-                temporaries.append(source);barrier.wait(timeout=5);return real(source,target)
+                temporaries.append(source)
+                if len(temporaries)<=2:barrier.wait(timeout=5)
+                return real(source,target)
             with patch.object(Path,'replace',simultaneous),ThreadPoolExecutor(max_workers=2) as pool:
                 futures=[pool.submit(atomic_json,path,{'value':i}) for i in (1,2)]
                 for future in futures:future.result(timeout=10)
-            self.assertEqual(len(set(temporaries)),2)
+            self.assertGreaterEqual(len(temporaries),2)
+            self.assertEqual(len(set(temporaries)),len(temporaries))
             self.assertIn(json.loads(path.read_text())['value'],(1,2))
             self.assertFalse(list(Path(d).glob('*.tmp')))
     def broken_share(self,root):

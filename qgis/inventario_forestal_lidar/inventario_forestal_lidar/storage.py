@@ -19,7 +19,7 @@ def diagnostic_root():
 def transient(error):
     codes={getattr(errno,name,None) for name in ('ENOENT','ESTALE','EIO','ETIMEDOUT','ENETDOWN',
         'ENETRESET','ENETUNREACH','ECONNRESET','ENOTCONN','EBUSY')}
-    return error.errno in codes-{None} or getattr(error,'winerror',None) in (32,33,53,64,67,121)
+    return error.errno in codes-{None} or getattr(error,'winerror',None) in (5,32,33,53,64,67,121)
 
 
 def pause(seconds,check):

@@ -25,7 +25,9 @@ que una carpeta o archivo no disponible pueda leerse.
 
 La escritura JSON usa temporales únicos junto al destino, conserva el JSON anterior
 hasta completar el reemplazo y reintenta sólo fallos transitorios, con pausas de
-0,2/0,5/1 s. **No recrea una carpeta de red desaparecida ni omite la cobertura.**
+0,2/0,5/1 s. WinError 5 también se reintenta de forma acotada porque Windows puede
+producirlo durante un reemplazo concurrente. Si la denegación persiste se informa;
+no se cambian permisos. **No recrea una carpeta de red desaparecida ni omite la cobertura.**
 Si el guardado del estado sigue fallando, se detiene con un diagnóstico alternativo.
 Al finalizar, un fallo de guardado no sustituye el error inicial, la cancelación o
 la autorización pendiente. Si el cálculo terminó pero no se pudo confirmar el estado,
@@ -227,9 +229,9 @@ reutiliza conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado en 0.4.2:** 82 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
+**Ejecutado en 0.4.2:** 83 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
 archivos parciales, nombres, copia, cancelación y flujo hasta GeoPackage con descarga
-humana simulada y FUSION sustituido. Con Python sin QGIS: 72 aprobadas y 10 omitidas.
+humana simulada y FUSION sustituido. Con Python sin QGIS: 73 aprobadas y 10 omitidas.
 La consulta real CNIG y sus huellas se verificaron en versiones anteriores; evidencias
 en FUENTES.md. Véase VALIDACION.md para el alcance exacto.
 

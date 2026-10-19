@@ -3,9 +3,9 @@ QFSFileEngine::open: No file name specified
 Could not create AF_NETLINK socket (Operation not permitted)
 Could not create AF_NETLINK socket (Operation not permitted)
 Could not create AF_NETLINK socket (Operation not permitted)
-test_acquire_download_and_resume_without_browser (test_auto_qgis.AutomaticTests.test_acquire_download_and_resume_without_browser) ... Could not create AF_NETLINK socket (Operation not permitted)
 Could not create AF_NETLINK socket (Operation not permitted)
-/usr/lib/python3/dist-packages/osgeo/osr.py:410: FutureWarning: Neither osr.UseExceptions() nor osr.DontUseExceptions() has been explicitly called. In GDAL 4.0, exceptions will be enabled by default.
+Could not create AF_NETLINK socket (Operation not permitted)
+test_acquire_download_and_resume_without_browser (test_auto_qgis.AutomaticTests.test_acquire_download_and_resume_without_browser) ... /usr/lib/python3/dist-packages/osgeo/osr.py:410: FutureWarning: Neither osr.UseExceptions() nor osr.DontUseExceptions() has been explicitly called. In GDAL 4.0, exceptions will be enabled by default.
   warnings.warn(
 ok
 test_auto_engine_needs_no_user_files_or_index (test_auto_qgis.AutomaticTests.test_auto_engine_needs_no_user_files_or_index) ... /workspace/otra-prueba/qgis/inventario_forestal_lidar/inventario_forestal_lidar/qgis_io.py:53: DeprecationWarning: QgsField constructor is deprecated
@@ -91,9 +91,10 @@ test_missing_parent_is_not_recreated (test_storage.StorageTests.test_missing_par
 test_processing_error_not_replaced_by_final_state_failure (test_storage.StorageTests.test_processing_error_not_replaced_by_final_state_failure) ... ok
 test_success_is_not_reported_if_final_write_fails (test_storage.StorageTests.test_success_is_not_reported_if_final_write_fails) ... ok
 test_transient_missing_path_is_retried (test_storage.StorageTests.test_transient_missing_path_is_retried) ... ok
+test_windows_access_denied_replacement_is_bounded_and_retried (test_storage.StorageTests.test_windows_access_denied_replacement_is_bounded_and_retried) ... ok
 
 ----------------------------------------------------------------------
-Ran 82 tests in 1.351s
+Ran 83 tests in 1.284s
 
 OK
 QGIS probado: 3.40.6-Bratislava

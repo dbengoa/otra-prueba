@@ -14,6 +14,6 @@ Un fallo final de escritura no sustituye errores, cancelaciones o autorizaciones
 No se crean automáticamente carpetas de red desaparecidas ni se promete reparar Q:.
 
 Instalar ZIP, reiniciar QGIS y reanudar en la misma carpeta sin borrar LAZ, LAS o recibos.
-Validación Linux/QGIS: 82 pruebas aprobadas; 72 portables y 10 omitidas sin QGIS.
-La publicación requiere las 17 pruebas de almacenamiento/lectura en Windows CI.
+Validación Linux/QGIS: 83 pruebas aprobadas; 72 portables y 10 omitidas sin QGIS.
+La publicación requiere las 18 pruebas de almacenamiento/lectura en Windows CI.
 Pendiente: reproducir el caso real en Q: y la ejecución FUSION/CNIG completa en ese equipo.
