@@ -1,0 +1,14 @@
+[general]
+name=Modelización forestal LiDAR
+description=Ecuaciones lineales y potenciales con validación cruzada a partir de CSV de campo y LiDAR
+version=0.1.0
+qgisMinimumVersion=3.28
+qgisMaximumVersion=3.99
+author=David Bengoa
+email=
+about=Versión experimental. Python >=3.10; NumPy, pandas y matplotlib. Sin PowerShell ni FUSION.
+category=Analysis
+experimental=True
+hasProcessingProvider=False
+repository=https://github.com/dbengoa/otra-prueba
+tracker=https://github.com/dbengoa/otra-prueba/issues
