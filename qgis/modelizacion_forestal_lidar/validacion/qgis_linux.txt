@@ -31,16 +31,47 @@ Fontconfig error: No writable cache directories
 ok
 test_cancel_during_fit (__main__.Integration.test_cancel_during_fit) ... ok
 test_dependencies_and_column_selection (__main__.Integration.test_dependencies_and_column_selection) ... ok
-test_eight_plots_four_targets_gui_arguments (__main__.Integration.test_eight_plots_four_targets_gui_arguments) ... ok
+test_eight_plots_four_targets_gui_arguments (__main__.Integration.test_eight_plots_four_targets_gui_arguments) ... Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+ok
 test_fit_graphs_predict (__main__.Integration.test_fit_graphs_predict) ... ok
+test_gui_two_predictor_minimum_and_four_equations (__main__.Integration.test_gui_two_predictor_minimum_and_four_equations) ... ok
 test_minimum_8_and_invalid_ids (__main__.Integration.test_minimum_8_and_invalid_ids) ... ok
 test_reject_mixed_protocol (__main__.Integration.test_reject_mixed_protocol) ... ok
 test_template_and_no_overwrite (__main__.Integration.test_template_and_no_overwrite) ... ok
 
 ----------------------------------------------------------------------
-Ran 8 tests in 4.856s
+Ran 9 tests in 5.351s
 
 OK
-Resultados: /tmp/tmpgnvgc9ba/result
-Resultados: /tmp/tmp7qkyypn6/result
-Predicciones: /tmp/tmp7qkyypn6/pred.csv
+Resultados: /tmp/tmpy5u8a2a2/result
+Resultados: /tmp/tmpn46qm809/result
+Predicciones: /tmp/tmpn46qm809/pred.csv
+Resultados: /tmp/tmpaybis3ta/result

@@ -83,7 +83,7 @@ class ModelTask(QgsTask):
 class Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Modelización forestal LiDAR · 0.2.0 experimental')
+        self.setWindowTitle('Modelización forestal LiDAR · 0.3.0 experimental')
         self.resize(820, 760)
         self.task = None
         self.result_path = None
@@ -112,8 +112,11 @@ class Dialog(QDialog):
         form.addRow('Grupo / monte en campo (opcional)', self.group)
         self.protocol = QComboBox(); self.protocol.addItems(['Columnas estándar: cm_Elev … (corte según CSV)', 'Sólo >2 m: cm_gt2_Elev … (CSV maestro)'])
         form.addRow('Familia de métricas del CSV', self.protocol)
+        self.min_predictors = QSpinBox(); self.min_predictors.setRange(0, 2); self.min_predictors.setValue(2)
+        self.min_predictors.setToolTip('2 exige dos métricas LiDAR; 1 exige una; 0 permite la media como ganador. Con 8–19, un mínimo de 2 fija exactamente dos.')
+        form.addRow('Mínimo de métricas por ecuación', self.min_predictors)
         self.max_predictors = QSpinBox(); self.max_predictors.setRange(1, 3); self.max_predictors.setValue(3)
-        self.max_predictors.setToolTip('Con 8–19 parcelas se limita automáticamente a 1 predictor por ecuación.')
+        self.max_predictors.setToolTip('Con 8–19 parcelas: máximo 2 si el mínimo es 2; en otro caso, máximo 1.')
         form.addRow('Máximo de predictores (desde 20 parcelas)', self.max_predictors)
         self.bias = QDoubleSpinBox(); self.bias.setRange(0, 10); self.bias.setSingleStep(.1); self.bias.setValue(.5)
         form.addRow('Peso de |sesgo| en selección', self.bias)
@@ -122,7 +125,7 @@ class Dialog(QDialog):
         self.graphs = QCheckBox('Generar gráficos de validación'); self.graphs.setChecked(True)
         for box in (self.normalize, self.partial, self.graphs): form.addRow(box)
         self.info = QPlainTextEdit(); self.info.setReadOnly(True)
-        self.info.setPlainText('Mínimo: 8 parcelas válidas por variable. Con 8–19: modo exploratorio, máximo 1 predictor.\nCV anidada dejando una parcela/grupo fuera; preselección <=3. Desde 20: CV 5/4 y hasta 3 predictores.\nUse métricas homogéneas: el filtro de altura debe coincidir en calibración y aplicación.\nLa CV evalúa la selección; no sustituye una prueba independiente del modelo final.')
+        self.info.setPlainText('Mínimo: 8 parcelas válidas por variable. Con 8–19: modo exploratorio; con mínimo 2 se usan exactamente 2 métricas.\nCV anidada dejando una parcela/grupo fuera; preselección <=3. Con mínimo 2: entrenamientos internos de 6 parcelas para 3 coeficientes. Desde 20 se amplía el entrenamiento según necesidad.\nUse métricas homogéneas: el filtro de altura debe coincidir en calibración y aplicación.\nLa CV evalúa la selección; no sustituye una prueba independiente del modelo final.')
         layout.addWidget(self.info, 1)
         self.progress = QProgressBar(); layout.addWidget(self.progress)
         buttons = QHBoxLayout(); layout.addLayout(buttons)
@@ -179,7 +182,7 @@ class Dialog(QDialog):
         pred = self.mode.currentIndex() == 2
         self.field.parentWidget().setEnabled(fit)
         self.models.parentWidget().setEnabled(pred)
-        for widget in (self.id_field, self.dec_field, self.group, self.protocol, self.max_predictors, self.bias, self.partial, self.graphs): widget.setEnabled(fit)
+        for widget in (self.id_field, self.dec_field, self.group, self.protocol, self.min_predictors, self.max_predictors, self.bias, self.partial, self.graphs): widget.setEnabled(fit)
         for box, _ in self.targets: box.setEnabled(fit)
         self.normalize.setEnabled(fit or pred)
 
@@ -199,8 +202,10 @@ class Dialog(QDialog):
         if not Path(field).is_file(): raise ValueError('Seleccione el CSV de campo')
         targets = [box.currentText() for box, _ in self.targets]
         if len(set(targets)) != 4: raise ValueError('Las cuatro variables de campo deben ser columnas diferentes')
+        if self.min_predictors.value() > self.max_predictors.value():
+            raise ValueError('El máximo de predictores no puede ser menor que el mínimo.')
         argv = ['ajustar', *common, '--campo', field, '--id-campo', self.id_field.currentText(), '--decimal-campo', self.dec_field.currentText(), '--objetivos', *targets,
-                '--min-parcelas', '8', '--max-predictores', str(self.max_predictors.value()), '--peso-sesgo', str(self.bias.value())]
+                '--min-parcelas', '8', '--min-predictores', str(self.min_predictors.value()), '--max-predictores', str(self.max_predictors.value()), '--peso-sesgo', str(self.bias.value())]
         if self.partial.isChecked(): argv.append('--permitir-no-coincidentes')
         if not self.graphs.isChecked(): argv.append('--sin-graficos')
         if self.group.currentIndex() > 0: argv += ['--grupo', self.group.currentText()]

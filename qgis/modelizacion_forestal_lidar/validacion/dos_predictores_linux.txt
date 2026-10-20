@@ -1,0 +1,13 @@
+test_collinear_pair_rejected (test_two_predictors.TwoPredictorTests.test_collinear_pair_rejected) ... ok
+test_eight_plots_two_predictors_in_all_outer_models (test_two_predictors.TwoPredictorTests.test_eight_plots_two_predictors_in_all_outer_models) ... V_ha: EXPLORATORIO con 8 parcelas; CV anidada dejando una parcela/grupo fuera, predictores 2–2, preselección <=10, 2 observaciones por coeficiente. Errores muy inciertos.
+ok
+test_forcing_is_recorded_and_reference_comparison_preserved (test_two_predictors.TwoPredictorTests.test_forcing_is_recorded_and_reference_comparison_preserved) ... V_ha: EXPLORATORIO con 8 parcelas; CV anidada dejando una parcela/grupo fuera, predictores 2–2, preselección <=10, 2 observaciones por coeficiente. Errores muy inciertos.
+ok
+test_inconsistent_min_and_max_rejected (test_two_predictors.TwoPredictorTests.test_inconsistent_min_and_max_rejected) ... ok
+test_no_silent_fallback_to_mean_or_single_variable (test_two_predictors.TwoPredictorTests.test_no_silent_fallback_to_mean_or_single_variable) ... ok
+test_training_size_adjusted_with_twenty_plots (test_two_predictors.TwoPredictorTests.test_training_size_adjusted_with_twenty_plots) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.362s
+
+OK

@@ -19,6 +19,7 @@ class Integration(unittest.TestCase):
         self.lidar.write_text('parcela_id,cm_Elev P95,cm_Elev mean\n'+''.join(f'{i},{5+i/3},{3+i/4}\n' for i in range(40)))
         self.field.write_text('parcela_id,V_ha,G_ha,N_ha,Hdom\n'+''.join(f'{i},{20+i*2},{5+i/2},{100+i*3},{6+i/3}\n' for i in range(40)))
         self.dialog = Dialog()
+        self.dialog.min_predictors.setValue(0)
         self.dialog.lidar.setText(str(self.lidar)); self.dialog.load_columns('lidar')
         self.dialog.field.setText(str(self.field)); self.dialog.load_columns('field')
         self.dialog.output.setText(str(self.root/'result'))
@@ -64,6 +65,22 @@ class Integration(unittest.TestCase):
             self.assertLessEqual(len(model['predictores']),1)
         self.assertIn('EXPLORATORIO',(result/'ecuaciones.txt').read_text())
         self.assertEqual(len(engine.read_table(result/'predicciones_validacion.csv')),32)
+
+    def test_gui_two_predictor_minimum_and_four_equations(self):
+        fresh=Dialog()
+        self.assertEqual(fresh.min_predictors.value(),2)
+        fresh.close()
+        self.lidar.write_text('parcela_id,cm_Elev P95,cm_Elev stddev\n'+''.join(f'{i},{i+2},{z}\n' for i,z in enumerate([.5,2.2,1.1,3.4,.9,2.7,4.8,1.7])))
+        self.field.write_text('parcela_id,V_ha,G_ha,N_ha,Hdom\n'+''.join(f'{i},{5+3*(i+2)+4*z},{10+(i+2)+2*z},{50+4*(i+2)+3*z},{3+2*(i+2)+z}\n' for i,z in enumerate([.5,2.2,1.1,3.4,.9,2.7,4.8,1.7])))
+        self.dialog.min_predictors.setValue(2)
+        args=self.dialog.arguments()
+        self.assertEqual(args[args.index('--min-predictores')+1],'2')
+        task=ModelTask(args);self.assertTrue(task.run(),task.error)
+        package=json.loads((self.root/'result'/'modelos.json').read_text())
+        for model in package['modelos'].values():
+            self.assertEqual(len(model['predictores']),2)
+            self.assertNotEqual(model['familia'],'media')
+        self.assertEqual(len(package['modelos']),4)
 
     def test_reject_mixed_protocol(self):
         self.lidar.write_text('parcela_id,cm_Elev P95,disponible_todos\n1,10,1\n2,,0\n')

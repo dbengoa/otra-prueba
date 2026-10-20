@@ -1,7 +1,7 @@
 name: Modelización QGIS experimental
 on:
   push:
-    branches: [experimental/modelizacion-qgis-0.2.0]
+    branches: [experimental/modelizacion-qgis-0.3.0]
     paths: ['qgis/modelizacion_forestal_lidar/**', '.github/workflows/modelizacion-qgis.yml']
   workflow_dispatch:
 permissions:
@@ -26,6 +26,7 @@ jobs:
       - run: python -m pip install numpy pandas matplotlib
       - run: python -m unittest discover -s tests -p test_engine.py -v
       - run: python -m unittest discover -s tests -p test_small_sample.py -v
+      - run: python -m unittest discover -s tests -p test_two_predictors.py -v
   package:
     needs: portable
     runs-on: ubuntu-latest
@@ -39,5 +40,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="modelizacion-qgis-v0.2.0-experimental-${GITHUB_SHA:0:7}"
-          gh release create "$tag" dist/modelizacion_forestal_lidar-0.2.0-experimental.zip dist/modelizacion_forestal_lidar-0.2.0-experimental.zip.sha256 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Modelización forestal LiDAR QGIS 0.2.0 experimental" --notes-file RELEASE.md
+          tag="modelizacion-qgis-v0.3.0-experimental-${GITHUB_SHA:0:7}"
+          gh release create "$tag" dist/modelizacion_forestal_lidar-0.3.0-experimental.zip dist/modelizacion_forestal_lidar-0.3.0-experimental.zip.sha256 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Modelización forestal LiDAR QGIS 0.3.0 experimental" --notes-file RELEASE.md

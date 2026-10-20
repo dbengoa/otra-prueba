@@ -1,39 +1,34 @@
-# Validación QGIS 0.2.0 experimental — 19-10-2026
+# Validación QGIS 0.3.0 experimental — 20-10-2026
 
 ## Ejecutado en Linux
 
-- 17 pruebas estadísticas del motor: lineal/potencial, Duan, selección anidada,
-  grupos, IDs, errores y predicción.
-- 7 pruebas nuevas de muestras pequeñas: ocho parcelas con candidato lineal y
-  potencial, predicción externa única por parcela y entrenamientos internos de seis,
-  rechazo de siete, límites estándar conservados desde 20, selección sin la parcela
-  externa, separación de grupos, rechazo de grupos insuficientes y lectura de JSON
-  de modelos 0.1.0 (algunos aspectos comparten prueba).
-- 8 pruebas de integración QGIS 3.40.6/Python 3.13, incluidas cuatro respuestas con
-  ocho parcelas, 32 predicciones externas, cuatro PNG y advertencias exportadas.
-- Ejecución privada con los ocho registros aportados y sus datos de campo: las
-  cuatro respuestas completaron el proceso y se generaron cuatro PNG. Los datos,
-  coeficientes y resultados privados NO se incluyen en el repositorio ni el ZIP.
-- ZIP con carpeta raíz válida, sintaxis de los módulos y SHA256 verificadas.
+39 pruebas aprobadas: 17 del motor original, 7 de muestras pequeñas heredadas,
+6 nuevas de selección con mínimo dos predictores y 9 de integración QGIS 3.40.6.
+Las nuevas verificaciones cubren: modelos externos y final con dos métricas,
+media no elegible, rechazo de parejas colineales o de un solo predictor,
+entrenamientos internos de seis parcelas, opciones incompatibles y ajuste del
+número de particiones para veinte parcelas. Se verifican cuatro ecuaciones desde
+los argumentos de la interfaz y que su nuevo mínimo inicial es 2.
 
-Total automatizado: 32 pruebas aprobadas (17 + 7 + 8).
-Las buenas pruebas artificiales comprueban funcionamiento, no validez forestal.
+También se ejecutó el perfil de mínimo dos con los ocho registros del usuario:
+cuatro ecuaciones y cuatro PNG completados. Es una comprobación de funcionamiento;
+los datos, coeficientes y resultados privados no se publican en el repositorio.
+La preselección de hasta diez métricas evita restringir la búsqueda a las pocas
+métricas de altura más correlacionadas. No se relaja VIF ni se oculta la comparación
+con la media. No hay garantía de mejora ni de validez forestal externa.
 
-## Pendiente en Windows
-
-Instalación y uso de QGIS en el ordenador del usuario, dependencias de esa
-instalación y comportamiento de sus unidades de red. Las pruebas Linux no son
-pruebas Windows. El workflow añadido puede ejecutar las pruebas portables en
-Windows/Linux; su configuración no equivale a haberlas ejecutado. No ejecuta QGIS
-Windows. Falta validación forestal independiente con una muestra mayor.
+Pendiente: instalar y ejecutar esta versión en QGIS Windows del usuario. Las
+pruebas Linux no son pruebas Windows. El workflow configura pruebas portables en
+Windows/Linux y publicación experimental, pero su configuración no demuestra su
+resultado ni ejecuta la interfaz QGIS en Windows. Falta validación forestal
+independiente con más parcelas.
 
 ## Reproducción
-
-Desde qgis/modelizacion_forestal_lidar con dependencias disponibles:
 
 ```
 python -m unittest discover -s tests -p test_engine.py -v
 python -m unittest discover -s tests -p test_small_sample.py -v
+python -m unittest discover -s tests -p test_two_predictors.py -v
 QT_QPA_PLATFORM=offscreen python tests/test_qgis.py
 python build.py
 ```

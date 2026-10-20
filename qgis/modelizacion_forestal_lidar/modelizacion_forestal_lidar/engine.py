@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-VERSION = '0.2.0-experimental'
+VERSION = '0.3.0-experimental'
 LOGGER = logging.getLogger('modelizacion_forestal_lidar.engine')
 LOGGER.setLevel(logging.INFO)
 LOGGER.propagate = False
@@ -45,6 +45,7 @@ class Options:
     bias_weight: float = 0.5
     seed: int = 2026
     score_tolerance: float = 0.02
+    min_predictors: int = 0
 
     def validate(self):
         if not 2 <= self.outer <= 20 or not 2 <= self.inner <= 20:
@@ -53,6 +54,8 @@ class Options:
             raise ValueError('Repeticiones: 1–20; preselección: 1–15')
         if not 1 <= self.max_predictors <= 4 or not 3 <= self.min_per_coefficient:
             raise ValueError('Predictores: 1–4; observaciones por coeficiente: al menos 3')
+        if not 0 <= self.min_predictors <= self.max_predictors:
+            raise ValueError('El mínimo de predictores debe estar entre 0 y el máximo')
         if self.min_plots < 8 or not 0 <= self.max_missing < 1:
             raise ValueError('Mínimo operativo: al menos 8 parcelas; faltantes: [0,1)')
         if not all(math.isfinite(v) for v in (self.max_missing,self.max_vif,self.max_correlation,self.bias_weight,self.score_tolerance)):
@@ -278,7 +281,7 @@ def select_model(X, y, options, groups=None, seed=None):
     cap = min(options.max_predictors, min(len(train) for train, _ in splits)//options.min_per_coefficient-1)
     slots = min(options.pool, len(X.columns))
     candidates = [('media', ())]
-    for size in range(1, max(0, cap)+1):
+    for size in range(max(1, options.min_predictors), max(0, cap)+1):
         candidates += [(family, subset) for subset in combinations(range(slots), size) for family in ('lineal', 'potencial')]
     valid = []; invalid = []
     for family, positions in candidates:
@@ -300,13 +303,16 @@ def select_model(X, y, options, groups=None, seed=None):
             continue
         row = {'familia': family, 'predictores': full_subset, 'posiciones_ranking': [j+1 for j in positions], **metrics,
                'score': metrics['rmse']+options.bias_weight*abs(metrics['sesgo']),
-               'n_predictores': len(positions), 'particiones_internas': len(splits)}
+               'n_predictores': len(positions), 'elegible':len(positions)>=options.min_predictors, 'particiones_internas': len(splits)}
         valid.append((row, model))
     if not valid:
         raise ValueError('No hay candidato válido, ni siquiera la media')
     valid.sort(key=lambda pair: (pair[0]['score'], pair[0]['n_predictores'], pair[0]['rmse']))
-    threshold = valid[0][0]['score']*(1+options.score_tolerance)
-    competitive = [pair for pair in valid if pair[0]['score'] <= threshold]
+    eligible = [pair for pair in valid if pair[0]['elegible']]
+    if not eligible:
+        raise ValueError(f'No hay ecuación válida con al menos {options.min_predictors} predictores: revise tamaño de entrenamiento, métricas, colinealidad y grupos. La media sólo se conserva como referencia.')
+    threshold = eligible[0][0]['score']*(1+options.score_tolerance)
+    competitive = [pair for pair in eligible if pair[0]['score'] <= threshold]
     winner = min(competitive, key=lambda pair: (pair[0]['n_predictores'], pair[0]['score']))
     best = winner[1]
     for row, _ in valid:
@@ -332,11 +338,18 @@ def equation(target, model):
 def effective_options(options, n):
     """A small-sample procedure; retain fully nested selection and group splits."""
     if n < 20:
-        # With n=8: 7 outer-training plots and 6 inner-training plots, enough
-        # for ONE slope + intercept at 3 observations per coefficient.
+        # n=8: 7 outer training and 6 inner training; with TWO slopes and
+        # intercept this leaves only 3 residual degrees of freedom internally.
+        multi = options.min_predictors >= 2
+        if options.min_predictors > 2:
+            raise ValueError('Con 8–19 parcelas se permite como máximo 2 predictores')
         return replace(options, outer=20, inner=20, repeats=1,
-                       pool=min(options.pool, 3), max_predictors=1,
-                       min_per_coefficient=3)
+                       pool=min(options.pool, 10 if multi else 3), max_predictors=2 if multi else 1,
+                       min_per_coefficient=2 if multi else 3)
+    if options.min_predictors >= 2 and n < 30:
+        # Preserve five observations/coefficient while leaving enough training
+        # plots for two predictors in the 20–29 range. Groups remain intact.
+        return replace(options, outer=20, inner=20)
     return options
 
 
@@ -347,7 +360,7 @@ def calibrate_target(X, y, identifiers, target, options, groups=None):
     options = effective_options(options, len(y))
     exploratory = len(y) < 20
     if exploratory:
-        LOGGER.warning('%s: EXPLORATORIO con %d parcelas; validación anidada dejando una parcela/grupo fuera, máximo 1 predictor y preselección <=3. Errores muy inciertos.', target, len(y))
+        LOGGER.warning('%s: EXPLORATORIO con %d parcelas; CV anidada dejando una parcela/grupo fuera, predictores %d–%d, preselección <=%d, %d observaciones por coeficiente. Errores muy inciertos.', target, len(y), options.min_predictors, options.max_predictors, options.pool, options.min_per_coefficient)
     all_predictions = []
     for repetition in range(options.repeats):
         splits = folds(len(y), options.outer, options.seed+repetition, groups)
@@ -380,6 +393,8 @@ def calibrate_target(X, y, identifiers, target, options, groups=None):
     final['advertencias'] = []
     if exploratory:
         final['advertencias'].append('EXPLORATORIO: menos de 20 parcelas; selección y errores de validación muy inestables. No es validación independiente ni garantía de aplicación a otras masas.')
+    if options.min_predictors:
+        final['advertencias'].append(f'Selección restringida a ecuaciones con al menos {options.min_predictors} métricas LiDAR. La media es sólo referencia; exigir predictores no garantiza mejorar su error.')
     if final['familia'] == 'media':
         final['advertencias'].append('La búsqueda no mejoró la media: no se ha seleccionado una relación LiDAR útil.')
     if outer_scores['rmse'] >= outer_scores['referencia_rmse']:
@@ -427,7 +442,7 @@ def fit_command(args):
     CHECK_CANCEL()
     options = Options(args.folds, args.inner_folds, args.repeticiones, args.preseleccion,
                       args.max_predictores, args.min_por_coeficiente, args.min_parcelas,
-                      args.max_ausentes, args.max_vif, args.max_correlacion, args.peso_sesgo, args.semilla, args.tolerancia_score)
+                      args.max_ausentes, args.max_vif, args.max_correlacion, args.peso_sesgo, args.semilla, args.tolerancia_score, args.min_predictores)
     options.validate()
     if len(set(args.objetivos)) != len(args.objetivos):
         raise ValueError('Respuestas duplicadas')
@@ -486,7 +501,7 @@ def fit_command(args):
             model, external, ranking, invalid = calibrate_target(X.iloc[np.flatnonzero(valid)], response.to_numpy()[valid],
                     common.to_numpy()[valid], target, options, selected_groups)
             models[target] = model; predictions.append(external)
-            reports.append({'variable': target, 'modo':model['modo'], 'familia_final': model['familia'], 'ecuacion': model['ecuacion'],
+            reports.append({'variable': target, 'modo':model['modo'], 'min_predictores_exigidos':options.min_predictors, 'familia_final': model['familia'], 'ecuacion': model['ecuacion'],
                             **model['validacion_externa_procedimiento']})
             write_csv(pd.DataFrame(ranking), destination/('candidatos_'+target+'.csv'))
             write_json(destination/('descartados_'+target+'.json'), invalid)
@@ -527,7 +542,7 @@ def fit_command(args):
 def predict_command(args):
     CHECK_CANCEL()
     package = json.loads(Path(args.modelos).read_text(encoding='utf-8'))
-    if package.get('version') not in (VERSION, '0.1.0-experimental') or not isinstance(package.get('modelos'), dict):
+    if package.get('version') not in (VERSION, '0.1.0-experimental', '0.2.0-experimental') or not isinstance(package.get('modelos'), dict):
         raise ValueError('Archivo de modelos incompatible')
     for target, model in package['modelos'].items():
         if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', target) or model.get('familia') not in ('media', 'lineal', 'potencial'):
@@ -599,6 +614,7 @@ def parser():
     for name, default in [('folds', 5), ('inner-folds', 4), ('repeticiones', 1), ('preseleccion', 10),
                           ('max-predictores', 3), ('min-por-coeficiente', 5), ('min-parcelas', 20), ('semilla', 2026)]:
         fit.add_argument('--'+name, type=int, default=default)
+    fit.add_argument('--min-predictores', type=int, default=0, help='0 permite la media; 2 exige dos métricas como mínimo')
     fit.add_argument('--max-ausentes', type=float, default=.1)
     fit.add_argument('--max-vif', type=float, default=10)
     fit.add_argument('--max-correlacion', type=float, default=.98)

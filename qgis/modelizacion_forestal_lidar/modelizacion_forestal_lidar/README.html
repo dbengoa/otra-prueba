@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><meta charset="utf-8"><title>Modelización forestal LiDAR</title><body><pre style="white-space:pre-wrap;font:16px sans-serif"># Modelización forestal LiDAR — complemento QGIS 0.2.0 experimental
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Modelización forestal LiDAR</title><body><pre style="white-space:pre-wrap;font:16px sans-serif"># Modelización forestal LiDAR — complemento QGIS 0.3.0 experimental
 
 Interfaz de QGIS para el motor de modelización 0.1.0. No abre PowerShell,
 no ejecuta programas externos y no instala paquetes. No requiere FUSION para
@@ -21,7 +21,7 @@ ajustar; utiliza los CSV de métricas ya calculados.
 
 ## Instalación y uso, sin consola
 
-1. Descargue `modelizacion_forestal_lidar-0.2.0-experimental.zip` de `dist`.
+1. Descargue `modelizacion_forestal_lidar-0.3.0-experimental.zip` de `dist`.
    No use el ZIP de todo el repositorio y no descomprima el ZIP instalable.
 2. QGIS → Complementos → Administrar e instalar complementos → Instalar a partir
    de ZIP → seleccione el archivo → Instalar complemento.
@@ -57,36 +57,54 @@ al antiguo maestro con ese prefijo.
 En predicción se deben conservar exactamente los nombres de métricas y protocolo
 usados al calibrar. No se hace conversión automática entre familias.
 
-## Muestras de 8 a 19 parcelas: modo exploratorio automático
+## Número de métricas: versión 0.3.0
 
-No basta con cambiar el mínimo. Para cada respuesta con 8–19 valores válidos:
+El nuevo selector **Mínimo de métricas por ecuación** empieza en **2**. Exige
+al menos dos predictores LiDAR tanto en la selección interna como en cada modelo
+externo y el modelo final. La media se calcula y exporta sólo como referencia;
+no puede ganar cuando se exige mínimo 2. El máximo solicitado no puede ser menor.
 
-- Una parcela fuera en CV externa y otra en la interna (con 8: entrenamientos
-  externos de 7 e internos de 6). La selección permanece dentro del entrenamiento.
-- Máximo 1 predictor por ecuación, preselección de hasta 3 posiciones del ranking
-  en cada entrenamiento, mínimo 3 observaciones por coeficiente, intercepto incluido.
-- Compara lineal, potencial con Duan y media. No se obliga a seleccionar LiDAR.
-- Una repetición. Con grupos se deja un grupo fuera en cada nivel, sin mezclarlos;
-  si faltan grupos se informa del error. Si los entrenamientos agrupados son muy
-  pequeños, sólo puede resultar viable la media.
-- Se exige que queden al menos 8 parcelas válidas por respuesta después del cruce
-  de IDs y la exclusión de respuestas vacías. Con 7 no se ajusta esa respuesta.
-- Se marca EXPLORATORIO en ecuaciones.txt, registro, modelos.json y resumen CSV.
-  El JSON guarda las opciones efectivas de cada respuesta, además de las solicitadas.
+Con **8–19 parcelas válidas por respuesta y mínimo 2**:
 
-Con 8 parcelas, RMSE, sesgo, elección de métrica y coeficientes son muy inestables.
-No usar como calibración operativa validada ni presentar la CV como prueba
-independiente del modelo definitivo. Amplíe la muestra y valide con datos nuevos.
-El mínimo 8 habilita el cálculo, no garantiza un modelo útil.
+- Exactamente dos predictores, lineal o potencial con corrección de Duan.
+- CV anidada dejando una parcela fuera: con ocho parcelas, se entrena con siete
+  en el nivel externo y seis en el interno. Cada ecuación tiene intercepto y dos
+  efectos; sólo quedan tres grados de libertad residuales en cada ajuste interno.
+- Dos observaciones por coeficiente, relajación explícita respecto a la versión
+  0.2.0 necesaria para permitir dos predictores. No convierte la muestra en suficiente.
+- Preselección de hasta diez posiciones del ranking por entrenamiento, manteniendo
+  filtros de ausencias, constante, correlación, VIF y singularidad. La selección se
+  repite dentro de cada entrenamiento; no utiliza la respuesta externa reservada.
+- Una repetición. Con grupos se deja un grupo fuera en cada nivel sin mezclarlos.
+  Puede resultar imposible estimar dos predictores con los grupos disponibles.
+- Sin candidato de dos predictores válido, informa del error; no baja a un predictor,
+  no sustituye por la media y no elimina parcelas externas para facilitar el ajuste.
 
-Desde 20 parcelas válidas se conserva el procedimiento estándar de la versión 0.1:
-CV 5/4, hasta 3 predictores según interfaz y 5 observaciones por coeficiente. El
-número permitido puede ser menor dentro de los entrenamientos. La interfaz muestra
-el máximo solicitado para este modo; para 8–19 se limita automáticamente a 1.
+**Exigir dos métricas no significa que mejoren la predicción.** RMSE y sesgo siguen
+siendo los obtenidos por la selección restringida, comparados con la media. Se
+conservan errores altos, R² negativos y predicciones negativas. Las ecuaciones son
+exploratorias; con ocho parcelas la selección y los errores son muy inestables.
+No constituyen validación independiente del modelo final. Amplíe la muestra antes
+de uso operativo y valide con datos nuevos.
 
-El motor mantiene por defecto 20 si se usa directamente desde Python; la interfaz
-pasa explícitamente el mínimo de 8. El programa independiente original no se modifica.
-Los modelos guardados por el complemento 0.1.0 se pueden aplicar en 0.2.0.
+Desde 20 parcelas se conservan cinco observaciones por coeficiente. Si el mínimo
+es 2 y hay 20–29 parcelas, se aumentan a 20 las particiones solicitadas externas e
+internas (limitadas a parcelas/grupos disponibles) para mantener entrenamientos
+suficientes. Desde 30 se mantiene CV 5/4 y el máximo solicitado, normalmente 3.
+Las restricciones de tamaño y grupos siempre pueden limitar el ajuste.
+
+El selector admite también 1 (exigir una métrica) o 0 (permitir la media). Con
+mínimo 0/1 y menos de 20 parcelas se conserva el procedimiento de 0.2.0: máximo
+un predictor, preselección &lt;=3 y tres observaciones por coeficiente.
+Los parámetros efectivos por respuesta y el mínimo exigido se guardan en JSON,
+resumen CSV, tablas de candidatos, registro y ecuaciones.txt.
+
+Se requieren al menos ocho respuestas de campo válidas por variable. Los CSV deben
+coincidir por ID, tener unidades correctas y métricas homogéneas. No se calculan
+predictores con una respuesta forestal ni se inventan filas para alcanzar el mínimo.
+El motor CLI conserva los valores predeterminados anteriores: para repetir el
+perfil de la interfaz use `--min-parcelas 8 --min-predictores 2`.
+Acepta modelos JSON anteriores 0.1.0 y 0.2.0 para predicción.
 
 ## Método y resultados
 

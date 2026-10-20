@@ -1,10 +1,28 @@
-Dimensiones inconsistentes en modelos.json
-Use una carpeta de salida nueva o vacía; no se sobrescriben resultados
-IDs no coincidentes; revise auditoria_union.json o autorice el cruce parcial con --permitir-no-coincidentes
+test_bias_sign_and_rmse (test_modelizacion.ModelsTests.test_bias_sign_and_rmse) ... ok
+test_constant_target_selects_baseline_and_no_two_plot_calibration (test_modelizacion.ModelsTests.test_constant_target_selects_baseline_and_no_two_plot_calibration) ... ok
+test_corrupt_models_are_not_silently_used (test_modelizacion.ModelsTests.test_corrupt_models_are_not_silently_used) ... Dimensiones inconsistentes en modelos.json
+ok
+test_decimal_comma_and_duplicate_headers (test_modelizacion.ModelsTests.test_decimal_comma_and_duplicate_headers) ... ok
+test_full_csv_fit_predict_and_preserve_inputs (test_modelizacion.ModelsTests.test_full_csv_fit_predict_and_preserve_inputs) ... Use una carpeta de salida nueva o vacía; no se sobrescriben resultados
+ok
+test_group_folds_do_not_mix_group_or_repeat_observations (test_modelizacion.ModelsTests.test_group_folds_do_not_mix_group_or_repeat_observations) ... ok
+test_ids_preserve_zeros_and_normalization_detects_collisions (test_modelizacion.ModelsTests.test_ids_preserve_zeros_and_normalization_detects_collisions) ... ok
+test_imputation_uses_training_median_only (test_modelizacion.ModelsTests.test_imputation_uses_training_median_only) ... ok
+test_invalid_numeric_data_and_options_fail (test_modelizacion.ModelsTests.test_invalid_numeric_data_and_options_fail) ... ok
+test_linear_coefficients_and_predictions_original_units (test_modelizacion.ModelsTests.test_linear_coefficients_and_predictions_original_units) ... ok
+test_nested_predictions_never_use_external_target (test_modelizacion.ModelsTests.test_nested_predictions_never_use_external_target) ... ok
+test_power_does_not_silently_shift_zeros_or_negative_values (test_modelizacion.ModelsTests.test_power_does_not_silently_shift_zeros_or_negative_values) ... ok
+test_power_equation_and_retransformation (test_modelizacion.ModelsTests.test_power_equation_and_retransformation) ... ok
+test_prediction_flags_nonpositive_extrapolation_imputation_and_negative (test_modelizacion.ModelsTests.test_prediction_flags_nonpositive_extrapolation_imputation_and_negative) ... ok
+test_ranking_is_refit_within_every_internal_training (test_modelizacion.ModelsTests.test_ranking_is_refit_within_every_internal_training) ... ok
+test_unmatched_ids_fail_with_audit (test_modelizacion.ModelsTests.test_unmatched_ids_fail_with_audit) ... IDs no coincidentes; revise auditoria_union.json o autorice el cruce parcial con --permitir-no-coincidentes
+ok
+test_vif_rejects_collinear_covariates (test_modelizacion.ModelsTests.test_vif_rejects_collinear_covariates) ... ok
+
 ----------------------------------------------------------------------
-Ran 17 tests in 2.041s
+Ran 17 tests in 0.808s
 
 OK
-Resultados: /tmp/tmpegoyoqkx/out
-Predicciones: /tmp/tmpegoyoqkx/pred.csv
-Predicciones: /tmp/tmpqk8m351f/pred.csv
+Resultados: /tmp/tmpq00ucdy3/out
+Predicciones: /tmp/tmpq00ucdy3/pred.csv
+Predicciones: /tmp/tmpfjzkklr3/pred.csv

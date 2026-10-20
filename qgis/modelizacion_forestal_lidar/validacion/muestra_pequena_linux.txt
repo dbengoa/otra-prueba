@@ -1,17 +1,17 @@
-test_eight_nested_predictions_and_linear_candidate (test_small_sample.SmallSampleTests.test_eight_nested_predictions_and_linear_candidate) ... V_ha: EXPLORATORIO con 8 parcelas; validación anidada dejando una parcela/grupo fuera, máximo 1 predictor y preselección <=3. Errores muy inciertos.
+test_eight_nested_predictions_and_linear_candidate (test_small_sample.SmallSampleTests.test_eight_nested_predictions_and_linear_candidate) ... V_ha: EXPLORATORIO con 8 parcelas; CV anidada dejando una parcela/grupo fuera, predictores 0–1, preselección <=3, 3 observaciones por coeficiente. Errores muy inciertos.
 ok
-test_groups_remain_separate (test_small_sample.SmallSampleTests.test_groups_remain_separate) ... V_ha: EXPLORATORIO con 8 parcelas; validación anidada dejando una parcela/grupo fuera, máximo 1 predictor y preselección <=3. Errores muy inciertos.
+test_groups_remain_separate (test_small_sample.SmallSampleTests.test_groups_remain_separate) ... V_ha: EXPLORATORIO con 8 parcelas; CV anidada dejando una parcela/grupo fuera, predictores 0–1, preselección <=3, 3 observaciones por coeficiente. Errores muy inciertos.
 ok
-test_insufficient_groups_do_not_fall_back_to_random_cv (test_small_sample.SmallSampleTests.test_insufficient_groups_do_not_fall_back_to_random_cv) ... V_ha: EXPLORATORIO con 8 parcelas; validación anidada dejando una parcela/grupo fuera, máximo 1 predictor y preselección <=3. Errores muy inciertos.
+test_insufficient_groups_do_not_fall_back_to_random_cv (test_small_sample.SmallSampleTests.test_insufficient_groups_do_not_fall_back_to_random_cv) ... V_ha: EXPLORATORIO con 8 parcelas; CV anidada dejando una parcela/grupo fuera, predictores 0–1, preselección <=3, 3 observaciones por coeficiente. Errores muy inciertos.
 ok
 test_predict_accepts_previous_model_version (test_small_sample.SmallSampleTests.test_predict_accepts_previous_model_version) ... ok
-test_selection_training_does_not_include_held_out_parcel (test_small_sample.SmallSampleTests.test_selection_training_does_not_include_held_out_parcel) ... V_ha: EXPLORATORIO con 8 parcelas; validación anidada dejando una parcela/grupo fuera, máximo 1 predictor y preselección <=3. Errores muy inciertos.
+test_selection_training_does_not_include_held_out_parcel (test_small_sample.SmallSampleTests.test_selection_training_does_not_include_held_out_parcel) ... V_ha: EXPLORATORIO con 8 parcelas; CV anidada dejando una parcela/grupo fuera, predictores 0–1, preselección <=3, 3 observaciones por coeficiente. Errores muy inciertos.
 ok
 test_seven_plots_rejected (test_small_sample.SmallSampleTests.test_seven_plots_rejected) ... ok
 test_twenty_preserves_standard_limits (test_small_sample.SmallSampleTests.test_twenty_preserves_standard_limits) ... ok
 
 ----------------------------------------------------------------------
-Ran 7 tests in 0.952s
+Ran 7 tests in 0.575s
 
 OK
-Predicciones: /tmp/tmp37bggiqh/pred.csv
+Predicciones: /tmp/tmpxbnxyykm/pred.csv
