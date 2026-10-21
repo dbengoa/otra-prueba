@@ -1,19 +1,21 @@
-0.4.2 experimental: lectura LAS más robusta y conservación del error original.
+# Inventario forestal LiDAR 0.4.5 experimental
 
-El registro recibido muestra primero errno 22 durante cobertura y después un fallo
-al escribir estado.json.tmp que ocultaba el error inicial. Los LAS se habían convertido.
-La causa interna del primer error no está confirmada con el registro disponible.
+Admite capas Point y MultiPoint (incluidas Z/M). Un MultiPoint con un centro conserva
+su ID. La separación de entidades con varios centros requiere activar la casilla;
+crea IDs <ID>__p1, <ID>__p2, etc., con correspondencia en parcelas_entrada.json.
+Identifica geometrías vacías e IDs nulos, duplicados o generados en colisión.
 
-Ahora se leen puntos sin búfer Python, en bloques <=1 MiB y con reapertura/reintento
-del mismo rango ante errno 22 o fallos transitorios. Se conserva cada punto; no se
-omite cobertura. El error persistente indica archivo/byte y se registra el traceback.
+Añade al CSV y GPKG n_primeros_retornos, n_primeros_retornos_sobre_corte,
+altura_cobertura_m, cobertura_primeros_retornos_pct y estado_cobertura.
+Cobertura = 100 × primeros retornos > corte / primeros retornos totales, incluido
+suelo clase 2. Se lee normalizada.las completa antes de CloudMetrics /minht.
+Usa el corte activo o 2 m si el filtro está desactivado. Sin primeros retornos:
+porcentaje vacío/NULL y aviso. Es indicador LiDAR, no FCC de campo idéntica.
 
-JSON: temporales únicos, tres reintentos adicionales breves, conservación del archivo
-anterior y diagnóstico alternativo en LOCALAPPDATA/InventarioForestalLiDAR/diagnosticos.
-Un fallo final de escritura no sustituye errores, cancelaciones o autorizaciones.
-No se crean automáticamente carpetas de red desaparecidas ni se promete reparar Q:.
+Instalar el ZIP sin descomprimir y reiniciar QGIS. Puede reutilizar la carpeta con
+los LAZ/LAS anteriores; cada ejecución genera nuevos resultados sin borrar originales.
 
-Instalar ZIP, reiniciar QGIS y reanudar en la misma carpeta sin borrar LAZ, LAS o recibos.
-Validación Linux/QGIS: 83 pruebas aprobadas; 72 portables y 10 omitidas sin QGIS.
-La publicación requiere las 18 pruebas de almacenamiento/lectura en Windows CI.
-Pendiente: reproducir el caso real en Q: y la ejecución FUSION/CNIG completa en ese equipo.
+Validación local: 104 pruebas aprobadas con QGIS 3.40.6 en Linux; 89 aprobadas y
+15 omitidas con Python sin QGIS. Binarios FUSION simulados en pruebas de flujo.
+Pendiente local: instalación, Point/MultiPoint y cálculo real FUSION 4.61 en Windows.
+La CI comprueba además la lectura de retornos en Windows; no equivale a FUSION real.

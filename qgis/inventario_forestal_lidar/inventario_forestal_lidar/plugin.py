@@ -2,12 +2,13 @@ from pathlib import Path
 import os
 import threading
 import webbrowser
-from qgis.PyQt.QtCore import Qt, pyqtSignal, QVariant
+from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import (QAction,QDialog,QVBoxLayout,QFormLayout,QLineEdit,
     QDoubleSpinBox,QPushButton,QFileDialog,QProgressBar,QPlainTextEdit,QMessageBox,QHBoxLayout,QLabel,QCheckBox)
-from qgis.core import QgsApplication,QgsTask,QgsWkbTypes,QgsVectorLayer,QgsProject,NULL,QgsMapLayerProxyModel
+from qgis.core import QgsApplication,QgsTask,QgsVectorLayer,QgsProject,QgsMapLayerProxyModel
 from qgis.gui import QgsMapLayerComboBox,QgsFieldComboBox
-from .core import Plot, CATALOG, validate
+from .core import CATALOG, validate
+from .qgis_io import read_plot_centers
 from .engine import Engine
 from .browser import default_download_directory
 
@@ -50,7 +51,7 @@ class Dialog(QDialog):
         super().__init__(iface.mainWindow())
         self.iface = iface
         self.job = None
-        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.4')
+        self.setWindowTitle('Inventario forestal LiDAR · Experimental 0.4.5')
         self.resize(700,600)
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel('Windows · FUSION 4.61 · PNOA tercera cobertura · Sin modelización estadística'))
@@ -60,6 +61,8 @@ class Dialog(QDialog):
         self.field = QgsFieldComboBox()
         self.layer.layerChanged.connect(self.field.setLayer)
         self.field.setLayer(self.layer.currentLayer())
+        self.split_multipoints = QCheckBox('Separar multipuntos con varios centros')
+        self.split_multipoints.setToolTip('Un MultiPoint con un centro se admite automáticamente. Con varios centros, esta opción crea IDs <ID>__p1, <ID>__p2, etc. No modifica la capa original.')
         self.radius = QDoubleSpinBox()
         self.radius.setRange(.01,10000)
         self.radius.setValue(15)
@@ -87,10 +90,14 @@ class Dialog(QDialog):
         self.fusion = QLineEdit('C:\\FUSION')
         form.addRow('Centros de parcelas',self.layer)
         form.addRow('ID único (se conserva como texto)',self.field)
+        form.addRow('',self.split_multipoints)
         form.addRow('Radio',self.radius)
         form.addRow('Celda MDT (m)',self.cell)
         form.addRow('',self.filter_height)
         form.addRow('Altura de corte (retornos >)',self.height_cutoff)
+        self.coverage_hint = QLabel('Cobertura de primeros retornos: corte activo; sin filtro, umbral de 2 m.')
+        self.coverage_hint.setWordWrap(True)
+        form.addRow('',self.coverage_hint)
         form.addRow('Carpeta sin espacios',self.path_row(self.output,False))
         form.addRow('Descargas de Chrome',self.path_row(self.download_directory,False))
         form.addRow('',self.assume_crs)
@@ -148,14 +155,7 @@ class Dialog(QDialog):
                 raise ValueError('Seleccione capa de puntos y campo ID')
             if layer.crs().authid() not in ('EPSG:25828','EPSG:25829','EPSG:25830','EPSG:25831','EPSG:4083'):
                 raise ValueError('Reproyecte la capa al CRS UTM de las teselas (ETRS89 o REGCAN95)')
-            plots = []
-            for feature in layer.getFeatures():
-                geometry = feature.geometry()
-                value = feature[field]
-                if value is None or value == NULL or geometry.isEmpty() or geometry.isMultipart() or QgsWkbTypes.geometryType(geometry.wkbType()) != QgsWkbTypes.PointGeometry:
-                    raise ValueError('Se requiere un centro puntual y un ID no nulo por parcela')
-                point = geometry.asPoint()
-                plots.append(Plot(str(value),point.x(),point.y()))
+            plots, origins = read_plot_centers(layer,field,self.split_multipoints.isChecked())
             output = self.output.text().strip()
             if not output or not Path(output).is_absolute():
                 raise ValueError('Seleccione una carpeta absoluta de trabajo')
@@ -167,12 +167,14 @@ class Dialog(QDialog):
                       'height_cutoff':self.height_cutoff.value() if self.filter_height.isChecked() else None,
                       'support_distance':self.support.value(),'fusion':self.fusion.text(),
                       'epsg':int(layer.crs().authid().split(':')[1]),'radius':self.radius.value(),'cell':self.cell.value()}
+            config['input_centers'] = origins
+            config['split_multipoints'] = self.split_multipoints.isChecked()
             self.job = Job(config,plots)
             self.job.status.connect(self.status)
             self.job.completed.connect(self.finished)
             self.start.setEnabled(False)
             self.cancel_button.setEnabled(True)
-            self.messages.appendPlainText('Inicio. Se procesan todas las entidades de la capa.')
+            self.messages.appendPlainText('Inicio. Se procesan todas las entidades de la capa: '+str(len(plots))+' centros. Correspondencia de ID en parcelas_entrada.json.')
             QgsApplication.taskManager().addTask(self.job)
         except Exception as e:
             QMessageBox.warning(self,'Validación',str(e))

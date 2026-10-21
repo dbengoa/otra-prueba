@@ -140,19 +140,30 @@ class AutomaticTests(unittest.TestCase):
                         Path(args[-1]).write_text('Mean\n10\n')
                 else:raise AssertionError(args)
             config=dict(output=str(root/'output'),fusion=str(fusion),epsg=25830,radius=5,cell=1,support_distance=2,download_directory=str(downloads),height_cutoff=cutoff)
+            config['input_centers']=[{'parcela_id':'001','id_origen':'001','entidad_id':1,'parte':1,'partes_entidad':1}]
             with patch('inventario_forestal_lidar.cnig.AutomaticSource',side_effect=source_factory),patch.object(Engine,'run_command',side_effect=fake_fusion):
                 run=Path(Engine(config,[Plot('001',400000,4600000)]).execute())
             self.assertEqual(json.loads((run/'estado.json').read_text())['input_mode'],'automatic_cnig')
             self.assertTrue((run/'plan_cnig.json').is_file())
             self.assertTrue((run/'cobertura_cnig.json').is_file())
             self.assertTrue((run/'metricas.gpkg').is_file())
+            self.assertEqual(json.loads((run/'parcelas_entrada.json').read_text()),config['input_centers'])
             import csv
             from qgis.core import QgsVectorLayer
             with (run/'metricas.csv').open(encoding='utf-8-sig') as source:
                 row=next(csv.DictReader(source))
             self.assertEqual(row['altura_corte_m'],'' if cutoff is None else '2.0')
+            self.assertEqual(row['n_primeros_retornos'],'800')
+            self.assertEqual(row['n_primeros_retornos_sobre_corte'],'800')
+            self.assertEqual(row['cobertura_primeros_retornos_pct'],'100.0')
+            self.assertEqual(row['altura_cobertura_m'],'2.0')
+            from inventario_forestal_lidar.core import token
+            coverage=json.loads((run/token('001')/'cobertura_retornos.json').read_text())
+            self.assertEqual(coverage['n_primeros_retornos'],800)
             layer=QgsVectorLayer(str(run/'metricas.gpkg'),'test','ogr')
             feature=next(layer.getFeatures())
+            self.assertEqual(feature['n_primeros_retornos'],800)
+            self.assertEqual(feature['cobertura_primeros_retornos_pct'],100)
             if cutoff is not None:
                 self.assertEqual(feature['altura_corte_m'],2)
                 self.assertEqual(feature['n_puntos_metricas'],1)

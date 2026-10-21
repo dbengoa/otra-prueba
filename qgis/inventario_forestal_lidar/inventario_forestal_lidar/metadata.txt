@@ -1,11 +1,11 @@
 [general]
 name=Inventario forestal LiDAR
 description=PNOA tercera cobertura y métricas por parcela con FUSION para Windows
-version=0.4.4
+version=0.4.5
 qgisMinimumVersion=3.34
 author=dbengoa
 email=
-about=Experimental. Consulta CNIG desde parcelas, descarga humana en Chrome normal y cálculo automático; sin modelización estadística.
+about=Experimental. Point/MultiPoint, cobertura de primeros retornos, CNIG con Chrome normal y métricas FUSION. Sin modelización estadística.
 category=Analysis
 experimental=True
 hasProcessingProvider=False

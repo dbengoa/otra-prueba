@@ -1,8 +1,51 @@
-# Inventario forestal LiDAR — 0.4.4 experimental
+# Inventario forestal LiDAR — 0.4.5 experimental
 
 **Entrada normal: capa de centros de parcelas, ID único, radio y carpeta de trabajo.
 El plugin consulta CNIG, descarga los LAZ y continúa con LAS/FUSION. No pide CSV ni
 seleccionar archivos LAZ/LAS.** La modelización estadística queda para otra fase.
+
+## Novedades 0.4.5: cobertura y capas multipunto
+
+Se admiten Point y MultiPoint, también con Z/M. Un MultiPoint con un solo centro
+por entidad conserva su ID y no requiere conversión previa. Para entidades con
+varios centros, active **Separar multipuntos con varios centros**: se crea una
+parcela por punto con IDs `<ID>__p1`, `<ID>__p2`, etc., en el orden de los vértices.
+La capa original no cambia. `parcelas_entrada.json` documenta el ID original,
+ID de entidad y número de parte. Se rechazan colisiones de IDs generados,
+IDs de origen repetidos/nulos/vacíos y geometrías vacías o no puntuales, con
+identificación de la entidad. No se elige un centro ni un centroide arbitrariamente.
+Se mantienen los requisitos de CRS UTM, ID único y coordenadas finitas.
+
+El CSV y los GeoPackage incluyen estas columnas nuevas, sin cambiar las `cm_`:
+
+| Columna | Significado |
+| --- | --- |
+| `n_primeros_retornos` | Todos los puntos con número de retorno 1 de la parcela; incluye suelo clase 2 y alturas negativas/cero. |
+| `n_primeros_retornos_sobre_corte` | Primeros retornos cuya altura normalizada es estrictamente superior al umbral. |
+| `altura_cobertura_m` | Umbral utilizado; corte activo de métricas, o 2 m si se desactiva el filtro. |
+| `cobertura_primeros_retornos_pct` | 100 × primeros retornos sobre el umbral / primeros retornos totales. |
+| `estado_cobertura` | `ok` o `sin_primeros_retornos`. |
+
+El recuento se realiza sobre **normalizada.las completa**, antes de ejecutar
+CloudMetrics `/minht`, sin filtrar por clase, orden de eco o flags de clasificación.
+No se cuentan los segundos o posteriores retornos como primeros. Se soportan los
+formatos LAS 0–10 con sus campos de orden de retorno de 3/4 bits. La lectura es por
+bloques cancelables y utiliza los reintentos de acceso existentes. No requiere laspy.
+Si el denominador es cero, el porcentaje queda vacío en CSV y NULL en GPKG, y se
+registra un aviso: no se sustituye por una cobertura del 0 %. El 0 % con primeros
+retornos válidos sí es un resultado posible. El detalle está en
+`<hash-del-ID>/cobertura_retornos.json` y en el registro.
+
+Es un **indicador LiDAR de cobertura**, no una medición idéntica a la FCC arbolada
+de campo; puede incluir matorral que supere el umbral y depende del vuelo. Se conservan
+todos los primeros retornos presentes en el recorte, incluidos los de suelo, sin
+aplicar filtros adicionales de clase. Para calibrar/aplicar modelos use siempre
+igual umbral y protocolo. No se obliga todavía al plugin de modelización a usar
+esta columna: ese cambio sería independiente.
+
+Actualice con el ZIP **0.4.5**, reinicie QGIS y use la misma carpeta. Se reutilizan
+LAZ/LAS verificados; las parcelas se recalculan en una nueva carpeta de resultados.
+No se añaden columnas a resultados históricos ni se requiere volver a descargar.
 
 ## Novedad 0.4.4: MDT desde un entorno recortado conjunto
 
@@ -173,16 +216,16 @@ tesela, sin mezclar niveles NPC ni admitir husos explícitamente incompatibles.
 3. Tenga instalado Google Chrome. Se necesita para ejecutar la
    autorización oficial de CNIG, incluido reCAPTCHA. No se requieren extensiones,
    Selenium, laspy ni paquetes Python adicionales.
-4. Descargue `inventario_forestal_lidar-0.4.4-experimental.zip`. En QGIS:
+4. Descargue `inventario_forestal_lidar-0.4.5-experimental.zip`. En QGIS:
    **Complementos → Administrar e instalar complementos → Instalar a partir de ZIP**.
    Instale sin descomprimir y **reinicie QGIS** para retirar el código de la versión anterior.
-5. La ventana debe indicar **Experimental 0.4.4**, sin campo de CSV ni selector de nubes.
+5. La ventana debe indicar **Experimental 0.4.5**, sin campo de CSV ni selector de nubes.
 
 FUSION no está incluido en el ZIP. Numpy, GDAL y Qt se utilizan desde QGIS.
 
 ## Uso
 
-1. Cargue la capa de puntos simples: un centro por parcela. Seleccione un campo ID
+1. Cargue una capa Point/MultiPoint. Si hay varios centros en una entidad, active la separación explícita. Seleccione un campo ID
    único y no nulo. Se procesan todas las entidades, no sólo la selección.
 2. La capa debe estar en el CRS UTM de las teselas: ETRS89 EPSG:25828–25831 o REGCAN95
    EPSG:4083. Reproyecte los centros antes si hace falta. No se reproyectan las nubes.
@@ -259,12 +302,14 @@ La espera máxima es de una hora por tesela; al expirar se conserva lo descargad
     plan_cnig.json                   # selección y versiones descartadas
     cobertura_cnig.json              # unión de huellas y parcela/teselas
     archivos_locales.json            # metadatos comprobados de lo descargado
+    parcelas_entrada.json            # ID original y partes; entradas desde la interfaz
     estado.json / proceso.log
     metricas.csv / metricas.gpkg
     <hash-del-ID>/
       cobertura.json / teselas.txt
       mdt.dtm / mdt.asc
       original.las / normalizada.las
+      cobertura_retornos.json        # primeros retornos antes del filtro de altura
       cloudmetrics.csv
       metricas.csv / metricas.gpkg
 ```
@@ -272,8 +317,8 @@ La espera máxima es de una hora por tesela; al expirar se conserva lo descargad
 El ID se conserva como texto, incluidos ceros iniciales. Los directorios usan un hash
 para admitir IDs no válidos como nombres Windows; `estado.json` guarda la correspondencia.
 El GeoPackage contiene centros en el CRS UTM de entrada. Las columnas `cm_` conservan
-como texto los valores/diagnósticos FUSION. No se aplican filtros de altura o primer retorno
-sin una decisión posterior de modelización.
+como texto los valores/diagnósticos FUSION. El corte configurable afecta a las métricas
+CloudMetrics. La cobertura tiene su propio denominador completo antes del filtro.
 
 El registro incluye consulta, carpetas vigiladas, incorporación, reutilización,
 comandos FUSION, errores y cancelación. Las teselas completas se conservan; `.part`
@@ -282,7 +327,13 @@ reutiliza conversiones verificadas.
 
 ## Verificación y límites de la versión experimental
 
-**Ejecutado en 0.4.2:** 83 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
+**Ejecutado en 0.4.5:** 104 pruebas aprobadas en Linux/QGIS 3.40.6, incluidas
+Point/MultiPoint, formatos LAS 0–10, suelo, igualdad al umbral, cancelación,
+cobertura NULL y exportación CSV/GPKG. Con Python sin QGIS: 89 aprobadas, 15
+omitidas. El flujo FUSION está simulado; no se ejecutaron sus binarios Windows.
+Véase el protocolo de 0.4.5 en VALIDACION.md.
+
+**Histórico 0.4.2:** 83 pruebas aprobadas en Linux/QGIS 3.40.6. Incluyen vigilancia,
 archivos parciales, nombres, copia, cancelación y flujo hasta GeoPackage con descarga
 humana simulada y FUSION sustituido. Con Python sin QGIS: 73 aprobadas y 10 omitidas.
 La consulta real CNIG y sus huellas se verificaron en versiones anteriores; evidencias

@@ -14,6 +14,7 @@ import uuid
 import traceback
 from .fusion import PROGRAMS, program, invocation, failure_message
 from .storage import StateStorageError, diagnostic_root
+from .coverage import first_return_cover
 from .core import (Cancelled, AuthorizationRequired, DETAIL, VERSION, token,
                    validate, read_index, select_tiles, las_header, digest, commands, atomic_json, validate_height_cutoff, metrics_row, terrain_clip_command)
 
@@ -192,6 +193,8 @@ class Engine:
         cutoff = self.c['height_cutoff']
         self.log('MÉTRICAS: '+('todos los retornos' if cutoff is None else 'altura normalizada > '+format(cutoff,'.12g')+' m; CloudMetrics /minht'))
         try:
+            if 'input_centers' in self.c:
+                atomic_json(self.run/'parcelas_entrada.json', self.c['input_centers'], check=self.check)
             self._execute(root)
             self.state['status'] = 'completed'
             self.progress(100,'Finalizado')
@@ -368,6 +371,14 @@ class Engine:
             count = las_header(normalized)
             if count != raw_count:
                 raise ValueError('La normalización perdió puntos para ID '+p.id)
+            self.phase('Cobertura de primeros retornos',p.id)
+            coverage = first_return_cover(normalized,
+                self.c['height_cutoff'] if self.c['height_cutoff'] is not None else 2.,
+                self.check, lambda text:self.progress(self._last_progress,text))
+            atomic_json(work/'cobertura_retornos.json', coverage, check=self.check)
+            if coverage['estado_cobertura'] != 'ok':
+                self.progress(self._last_progress,'AVISO ID '+p.id+': sin primeros retornos; cobertura vacía, no cero')
+            self.log('COBERTURA PRIMEROS RETORNOS ID='+p.id+' '+json.dumps(coverage,ensure_ascii=False))
             self.phase('CloudMetrics',p.id)
             self.run_command(cmd['metrics'])
             with metrics.open(encoding='utf-8-sig',newline='') as f:
@@ -375,6 +386,7 @@ class Engine:
             if len(result) != 1:
                 raise ValueError('CloudMetrics debe producir exactamente una fila por parcela')
             row = metrics_row(p,self.c['radius'],count,result[0],self.c.get('height_cutoff'))
+            row.update(coverage)
             self.log('RETORNOS MÉTRICAS ID='+p.id+' total='+str(count)+' usados='+str(row['n_puntos_metricas']))
             rows.append(row)
             with (work/'metricas.csv').open('w',encoding='utf-8-sig',newline='') as f:

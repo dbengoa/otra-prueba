@@ -44,6 +44,12 @@ class QgisTests(unittest.TestCase):
         from inventario_forestal_lidar.qgis_io import export_results
         with tempfile.TemporaryDirectory() as d:
             rows=[dict(parcela_id=id,x=400000+i,y=4600000,radio_m=15,n_puntos=100,cm_mean='12.3') for i,id in enumerate(('001','A/ñ'))]
+            for i,row in enumerate(rows):
+                row.update(n_primeros_retornos=0 if i==0 else 80,
+                           n_primeros_retornos_sobre_corte=0 if i==0 else 20,
+                           altura_cobertura_m=2.,
+                           cobertura_primeros_retornos_pct='' if i==0 else 25.,
+                           estado_cobertura='sin_primeros_retornos' if i==0 else 'ok')
             for row in rows:(Path(d)/token(row['parcela_id'])).mkdir()
             export_results(d,rows,25830,lambda:None)
             layer=QgsVectorLayer(str(Path(d)/'metricas.gpkg'),'test','ogr')
@@ -57,6 +63,14 @@ class QgisTests(unittest.TestCase):
                 f=next(single.getFeatures())
                 self.assertEqual(f['parcela_id'],row['parcela_id'])
                 self.assertEqual(f.geometry().asPoint().x(),row['x'])
+                from qgis.PyQt.QtCore import QVariant
+                from qgis.core import NULL
+                self.assertEqual(single.fields().field('cobertura_primeros_retornos_pct').type(),QVariant.Double)
+                self.assertEqual(f['n_primeros_retornos'],row['n_primeros_retornos'])
+                if row['cobertura_primeros_retornos_pct']=='':
+                    self.assertEqual(f['cobertura_primeros_retornos_pct'],NULL)
+                else:
+                    self.assertEqual(f['cobertura_primeros_retornos_pct'],25.)
                 single=None
             layer=None
 
@@ -80,7 +94,8 @@ class QgisTests(unittest.TestCase):
         self.assertFalse(dialog.auth_button.isEnabled())
         self.assertEqual(dialog.auth_button.text(),'Volver a abrir ficha')
         self.assertTrue(Path(dialog.download_directory.text()).is_absolute())
-        self.assertIn('0.4.4',dialog.windowTitle())
+        self.assertFalse(dialog.split_multipoints.isChecked())
+        self.assertIn('0.4.5',dialog.windowTitle())
         dialog.close()
 
     def test_wkt_crs_and_compound(self):

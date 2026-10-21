@@ -1,7 +1,7 @@
 name: Inventario LiDAR experimental
 on:
   push:
-    branches: [experimental/inventario-forestal-lidar-0.4.4]
+    branches: [experimental/inventario-forestal-lidar-0.4.5]
     paths:
       - 'qgis/inventario_forestal_lidar/**'
       - '.github/workflows/experimental-lidar.yml'
@@ -28,6 +28,8 @@ jobs:
         run: python -m unittest discover -s tests -p test_height_cutoff.py -v
       - name: Terrain subset command validation
         run: python -m unittest discover -s tests -p test_terrain_subset.py -v
+      - name: First return coverage, LAS formats and cancellation
+        run: python -m unittest discover -s tests -p test_first_return_cover.py -v
       - name: Storage and LAS read error regressions
         run: python -m unittest discover -s tests -p test_storage.py -v
   test-package-release:
@@ -49,8 +51,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="lidar-v0.4.4-experimental-${GITHUB_SHA:0:7}"
-          gh release create "$tag" dist/inventario_forestal_lidar-0.4.4-experimental.zip dist/inventario_forestal_lidar-0.4.4-experimental.zip.sha256 \
+          tag="lidar-v0.4.5-experimental-${GITHUB_SHA:0:7}"
+          gh release create "$tag" dist/inventario_forestal_lidar-0.4.5-experimental.zip dist/inventario_forestal_lidar-0.4.5-experimental.zip.sha256 \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "Inventario forestal LiDAR 0.4.4 experimental" \
+            --title "Inventario forestal LiDAR 0.4.5 experimental" \
             --notes-file docs/RELEASE.md

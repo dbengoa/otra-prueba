@@ -107,3 +107,39 @@ vecinas y que MDT/normalización consumen entorno_mdt.las. Estas pruebas verific
 orquestación y parámetros; no ejecutan los binarios FUSION ni demuestran su
 comportamiento real con los datos que provocaron el cierre. Pendiente en Windows:
 prueba real de ClipData con varias entradas, MDT, normalización y CloudMetrics.
+
+
+## 0.4.5 — primeros retornos y Point/MultiPoint (21-10-2026)
+
+Ejecutadas localmente 104 pruebas aprobadas en Linux con QGIS 3.40.6. Con Python
+sin QGIS: 89 aprobadas y 15 omitidas. Registros tests-0.4.5-linux.txt y
+ tests-0.4.5-portable.txt. Las seis pruebas nuevas portables cubren formatos LAS
+0–10, máscaras de 3/4 bits (un noveno retorno no se cuenta como primero), clase 2
+en el denominador, altura estrictamente > corte, umbral 0/fraccional, escalas/offsets,
+alturas negativas, denominador vacío frente a cobertura cero, truncado, errores de
+lectura, cancelación y conservación SHA-256 del LAS. Los 11 formatos se ejecutan
+como subcasos. Cuatro pruebas QGIS nuevas cubren Point/PointZ/PointM y
+MultiPoint/MultiPointZM, un punto o varios, opt-in, IDs con ceros iniciales,
+colisiones, geometrías vacías, nulos y duplicados, sin editar la fuente.
+
+La exportación QGIS comprueba tipo numérico y NULL (no 0) en cobertura sin primeros
+retornos, tanto agregado como por parcela. El flujo automático con FUSION simulado
+comprueba los nuevos campos en CSV/GPKG, cobertura_retornos.json y el mapa de origen.
+En estas pruebas la nube copiada por el FUSION simulado NO es una normalización
+real; los valores de cobertura se usan solo para comprobar la integración.
+
+Pendiente en Windows/QGIS con FUSION 4.61 real:
+1. Instalar ZIP 0.4.5, reiniciar QGIS y comprobar título y nueva casilla.
+2. Procesar capa Point y copia MultiPoint de un punto: mismos IDs, centros y métricas.
+3. Probar MultiPoint de varios puntos: rechazo explicativo sin opt-in; con casilla,
+   IDs __p1/__p2 y parcelas_entrada.json correctos; cotejar con partes simples manuales.
+4. Reutilizar carpeta anterior sin borrar LAZ/LAS; verificar nueva carpeta de resultados.
+5. Contar manualmente retorno==1 en normalizada.las, incluido clase 2; contrastar
+   numerador >2 y porcentaje con CSV, JSON y GPKG. Repetir corte 0, 3 y sin filtro
+   (en ese último caso cobertura sigue usando 2 m). Verificar que ClipData conserva
+   número de retorno y que CloudMetrics no altera el LAS normalizado.
+6. Parcela entre teselas, nube sin primeros retornos, cancelación y unidad de red.
+   Comparar porcentaje con un lector LAS independiente antes de uso productivo.
+
+La consulta/descarga CNIG no se ha modificado ni repetido en esta versión.
+No se ha ejecutado FUSION real aquí; no se valida cobertura como FCC de campo.

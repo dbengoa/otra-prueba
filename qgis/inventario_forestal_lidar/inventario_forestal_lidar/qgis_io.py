@@ -4,6 +4,55 @@ import csv
 import math
 
 
+def read_plot_centers(layer, field, split_multipoints=False):
+    """Snapshot point features on the GUI thread; never edit the input layer.
+
+    Singleton MultiPoint keeps its original ID. Real multipart features require an
+    explicit opt-in and receive <ID>__p1, <ID>__p2, ... in source vertex order.
+    """
+    from qgis.core import QgsWkbTypes, NULL
+    from .core import Plot
+    if not layer or not layer.isValid() or field not in layer.fields().names():
+        raise ValueError('Seleccione capa de puntos y campo ID')
+    features, ids = [], set()
+    for feature in layer.getFeatures():
+        fid = feature.id()
+        value = feature[field]
+        if value is None or value == NULL or not str(value).strip():
+            raise ValueError('ID nulo o vacío en entidad '+str(fid))
+        base = str(value)
+        if base in ids:
+            raise ValueError('ID duplicado '+base+' en entidad '+str(fid)+'. Use un campo único por entidad.')
+        ids.add(base)
+        geometry = feature.geometry()
+        if geometry.isNull() or geometry.isEmpty():
+            raise ValueError('Geometría vacía en ID '+base+' (entidad '+str(fid)+')')
+        if QgsWkbTypes.geometryType(geometry.wkbType()) != QgsWkbTypes.PointGeometry:
+            raise ValueError('La entidad '+str(fid)+' (ID '+base+') no es Point/MultiPoint')
+        points = geometry.asMultiPoint() if geometry.isMultipart() else [geometry.asPoint()]
+        if not points:
+            raise ValueError('Sin centros en ID '+base)
+        if len(points) > 1 and not split_multipoints:
+            raise ValueError('ID '+base+' (entidad '+str(fid)+') contiene '+str(len(points))+
+                             ' puntos. Active «Separar multipuntos con varios centros» para crear una parcela por punto.')
+        features.append((fid, base, points))
+    plots, origins, used = [], [], set()
+    for fid, base, points in features:
+        for part, point in enumerate(points, 1):
+            identifier = base if len(points) == 1 else base+'__p'+str(part)
+            if identifier in used or (len(points) > 1 and identifier in ids):
+                raise ValueError('Colisión de ID generado '+identifier+'. Cambie los ID de origen antes de separar.')
+            if not all(map(math.isfinite, (point.x(), point.y()))):
+                raise ValueError('Coordenadas no finitas en ID '+identifier+' (entidad '+str(fid)+')')
+            used.add(identifier)
+            plots.append(Plot(identifier, point.x(), point.y()))
+            origins.append({'parcela_id':identifier, 'id_origen':base, 'entidad_id':fid,
+                            'parte':part, 'partes_entidad':len(points)})
+    if not plots:
+        raise ValueError('La capa no contiene parcelas')
+    return plots, origins
+
+
 def verify_terrain(path, plot, radius, check):
     from osgeo import gdal
     # Every raster cell intersecting the circle must have valid terrain, including
@@ -48,7 +97,9 @@ def export_results(directory, rows, epsg, check):
         writer.writerows(rows)
     layer = QgsVectorLayer('Point?crs=EPSG:'+str(epsg),'metricas','memory')
     provider = layer.dataProvider()
-    numeric = {'x','y','radio_m','n_puntos','n_puntos_metricas','altura_corte_m'}
+    numeric = {'x','y','radio_m','n_puntos','n_puntos_metricas','altura_corte_m',
+               'n_primeros_retornos','n_primeros_retornos_sobre_corte',
+               'altura_cobertura_m','cobertura_primeros_retornos_pct'}
     # FUSION field names and nonnumeric diagnostic values are retained verbatim.
     provider.addAttributes([QgsField(k,QVariant.Double if k in numeric else QVariant.String) for k in keys])
     layer.updateFields()
