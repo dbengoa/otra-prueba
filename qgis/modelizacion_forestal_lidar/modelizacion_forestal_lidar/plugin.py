@@ -14,6 +14,16 @@ from qgis.PyQt.QtWidgets import (QDialog, QVBoxLayout, QFormLayout,
     QHBoxLayout, QWidget, QLineEdit, QPushButton, QFileDialog, QComboBox,
     QSpinBox, QDoubleSpinBox, QCheckBox, QPlainTextEdit, QProgressBar, QMessageBox, QScrollArea)
 
+SKIP_TARGET = '(no modelizar)'
+TARGET_FIELDS = [
+    ('Volumen (m³/ha)', 'V_ha'),
+    ('Área basal (m²/ha)', 'G_ha'),
+    ('Pies/ha', 'N_ha'),
+    ('Altura dominante (m)', 'Hdom'),
+    ('Fracción de cabida cubierta (%)', 'FCC_pct'),
+    ('Diámetro medio (cm)', 'D_medio_cm'),
+]
+
 
 def dependencies():
     errors = []
@@ -63,7 +73,7 @@ class ModelTask(QgsTask):
                 path = Path(args.salida)
                 if path.exists(): raise ValueError('La plantilla ya existe; no se sobrescribe')
                 result = engine.pd.DataFrame({'parcela_id': identifiers})
-                for target in engine.TARGETS: result[target] = ''
+                for target in engine.TEMPLATE_TARGETS: result[target] = ''
                 path.parent.mkdir(parents=True, exist_ok=True)
                 engine.write_csv(result, path)
             return True
@@ -83,7 +93,7 @@ class ModelTask(QgsTask):
 class Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Modelización forestal LiDAR · 0.3.0 experimental')
+        self.setWindowTitle('Modelización forestal LiDAR · 0.3.1 experimental')
         self.resize(820, 760)
         self.task = None
         self.result_path = None
@@ -106,8 +116,10 @@ class Dialog(QDialog):
         self.dec_field = QComboBox(); self.dec_field.addItems(['.', ','])
         form.addRow('Decimal métricas', self.dec_lidar); form.addRow('Decimal campo', self.dec_field)
         self.targets = []
-        for title, default in [('Volumen (m³/ha)', 'V_ha'), ('Área basal (m²/ha)', 'G_ha'), ('Pies/ha', 'N_ha'), ('Altura dominante (m)', 'Hdom')]:
-            box = QComboBox(); box.addItem(default); form.addRow(title, box); self.targets.append((box, default))
+        for title, default in TARGET_FIELDS:
+            box = QComboBox(); box.addItems([SKIP_TARGET, default]); box.setCurrentText(default)
+            box.setToolTip('Columna de campo que se ajustará como respuesta. Elija «no modelizar» si no dispone de ella. No se convierte de unidad automáticamente.')
+            form.addRow(title, box); self.targets.append((box, default))
         self.group = QComboBox(); self.group.addItem('(sin grupos)')
         form.addRow('Grupo / monte en campo (opcional)', self.group)
         self.protocol = QComboBox(); self.protocol.addItems(['Columnas estándar: cm_Elev … (corte según CSV)', 'Sólo >2 m: cm_gt2_Elev … (CSV maestro)'])
@@ -169,8 +181,12 @@ class Dialog(QDialog):
             combos = [(self.id_lidar, 'parcela_id')] if which == 'lidar' else [(self.id_field, 'parcela_id'), *self.targets]
             for combo, default in combos:
                 previous = combo.currentText()
-                combo.clear(); combo.addItems(columns)
+                is_target = any(combo is box for box, _ in self.targets)
+                combo.clear()
+                if is_target: combo.addItem(SKIP_TARGET)
+                combo.addItems(columns)
                 choice = previous if previous in columns else default
+                if is_target and previous == SKIP_TARGET: choice = SKIP_TARGET
                 if choice in columns: combo.setCurrentText(choice)
             if which == 'field':
                 self.group.clear(); self.group.addItems(['(sin grupos)', *columns])
@@ -200,8 +216,12 @@ class Dialog(QDialog):
             return ['predecir', *common, '--modelos', self.models.text().strip()]
         field = self.field.text().strip()
         if not Path(field).is_file(): raise ValueError('Seleccione el CSV de campo')
-        targets = [box.currentText() for box, _ in self.targets]
-        if len(set(targets)) != 4: raise ValueError('Las cuatro variables de campo deben ser columnas diferentes')
+        targets = [box.currentText() for box, _ in self.targets if box.currentText() != SKIP_TARGET]
+        if not targets: raise ValueError('Seleccione al menos una variable de campo para modelizar')
+        if len(set(targets)) != len(targets):
+            raise ValueError('Las variables de campo seleccionadas deben ser columnas diferentes')
+        if self.id_field.currentText() in targets:
+            raise ValueError('El campo ID no puede utilizarse como variable de respuesta')
         if self.min_predictors.value() > self.max_predictors.value():
             raise ValueError('El máximo de predictores no puede ser menor que el mínimo.')
         argv = ['ajustar', *common, '--campo', field, '--id-campo', self.id_field.currentText(), '--decimal-campo', self.dec_field.currentText(), '--objetivos', *targets,

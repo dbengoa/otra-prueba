@@ -5,7 +5,7 @@ import hashlib
 root=Path(__file__).resolve().parent
 package=root/'modelizacion_forestal_lidar'
 out=root/'dist'; out.mkdir(exist_ok=True)
-zip_path=out/'modelizacion_forestal_lidar-0.3.0-experimental.zip'
+zip_path=out/'modelizacion_forestal_lidar-0.3.1-experimental.zip'
 with ZipFile(zip_path,'w',compression=ZIP_DEFLATED) as archive:
     for path in sorted(package.rglob('*')):
         if not path.is_file() or '__pycache__' in path.parts or path.suffix=='.pyc': continue

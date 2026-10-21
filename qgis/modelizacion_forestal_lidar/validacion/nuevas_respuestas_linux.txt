@@ -1,0 +1,10 @@
+test_fcc_diameter_calibrate_save_and_predict (test_new_targets.NewTargetsTests.test_fcc_diameter_calibrate_save_and_predict) ... ok
+test_template_has_six_targets_and_cli_fit_keeps_old_defaults (test_new_targets.NewTargetsTests.test_template_has_six_targets_and_cli_fit_keeps_old_defaults) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.894s
+
+OK
+Resultados: /tmp/tmpq1qnufwm/out
+Predicciones: /tmp/tmpq1qnufwm/pred.csv
+Plantilla creada: /tmp/tmp1v9v2s10/template.csv

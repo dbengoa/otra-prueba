@@ -11,7 +11,7 @@ test_seven_plots_rejected (test_small_sample.SmallSampleTests.test_seven_plots_r
 test_twenty_preserves_standard_limits (test_small_sample.SmallSampleTests.test_twenty_preserves_standard_limits) ... ok
 
 ----------------------------------------------------------------------
-Ran 7 tests in 0.575s
+Ran 7 tests in 1.314s
 
 OK
-Predicciones: /tmp/tmpxbnxyykm/pred.csv
+Predicciones: /tmp/tmpfbh0idka/pred.csv

@@ -8,6 +8,6 @@ test_no_silent_fallback_to_mean_or_single_variable (test_two_predictors.TwoPredi
 test_training_size_adjusted_with_twenty_plots (test_two_predictors.TwoPredictorTests.test_training_size_adjusted_with_twenty_plots) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.362s
+Ran 6 tests in 0.611s
 
 OK

@@ -20,9 +20,9 @@ ok
 test_vif_rejects_collinear_covariates (test_modelizacion.ModelsTests.test_vif_rejects_collinear_covariates) ... ok
 
 ----------------------------------------------------------------------
-Ran 17 tests in 0.808s
+Ran 17 tests in 1.698s
 
 OK
-Resultados: /tmp/tmpq00ucdy3/out
-Predicciones: /tmp/tmpq00ucdy3/pred.csv
-Predicciones: /tmp/tmpfjzkklr3/pred.csv
+Resultados: /tmp/tmpfyaka4bl/out
+Predicciones: /tmp/tmpfyaka4bl/pred.csv
+Predicciones: /tmp/tmpyaah594e/pred.csv

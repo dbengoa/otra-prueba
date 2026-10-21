@@ -1,8 +1,46 @@
-<!doctype html><html lang="es"><meta charset="utf-8"><title>Modelización forestal LiDAR</title><body><pre style="white-space:pre-wrap;font:16px sans-serif"># Modelización forestal LiDAR — complemento QGIS 0.3.0 experimental
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Modelización forestal LiDAR</title><body><pre style="white-space:pre-wrap;font:16px sans-serif"># Modelización forestal LiDAR — complemento QGIS 0.3.1 experimental
 
-Interfaz de QGIS para el motor de modelización 0.1.0. No abre PowerShell,
+Interfaz de QGIS para el motor de modelización incluido en el complemento. No abre PowerShell,
 no ejecuta programas externos y no instala paquetes. No requiere FUSION para
 ajustar; utiliza los CSV de métricas ya calculados.
+
+## Novedades 0.3.1: FCC y diámetro medio
+
+Después de **Altura dominante (m)** aparecen **Fracción de cabida cubierta (%)**
+y **Diámetro medio (cm)**, con columnas predeterminadas `FCC_pct` y `D_medio_cm`.
+Son nuevas **variables de campo a modelizar**, no predictores LiDAR obligatorios.
+Se ajustan y validan por separado igual que volumen, área basal, densidad y altura.
+
+Puede elegir cualquier columna apropiada del CSV para cada selector, o
+**(no modelizar)** para omitir esa respuesta. Si falta la columna predeterminada,
+queda sin seleccionar; no se toma automáticamente el ID ni otra columna del CSV.
+Debe elegir al menos una respuesta y no repetir columnas ni usar el ID como respuesta.
+Al recargar el CSV se conserva una selección manual de «no modelizar».
+
+La plantilla de campo contiene ahora:
+`parcela_id,V_ha,G_ha,N_ha,Hdom,FCC_pct,D_medio_cm`.
+No es obligatorio rellenar/modelizar las seis variables. Los CSV anteriores de cuatro
+respuestas siguen funcionando: FCC y diámetro quedan en «no modelizar».
+
+`FCC_pct` se expresa de 0 a 100 (%); `D_medio_cm` en centímetros, sin expansión por
+hectárea. No se convierte automáticamente una fracción 0–1 a porcentaje ni mm a cm.
+No sustituya altura dominante por altura media ni FCC de campo por un predictor
+LiDAR de cobertura sin identificar ese cambio de variable. Los modelos lineales y
+potenciales no están acotados automáticamente a 0–100: revise predicciones de FCC
+fuera del dominio y su validación antes de aplicarlas.
+
+Las nuevas respuestas se incluyen en ecuaciones, resumen, predicciones de validación,
+modelos JSON, gráficos (si se activan) y aplicación a nuevas métricas. Cada respuesta
+mantiene su control de parcelas válidas, selección y validación anidada. Se conserva
+el mínimo inicial de dos métricas de 0.3.0; no se añade selección de predictores
+obligatorios en esta actualización. El CLI conserva cuatro objetivos por defecto;
+para los nuevos se puede usar `--objetivos FCC_pct D_medio_cm`.
+
+Instale el ZIP **0.3.1**, reinicie QGIS y seleccione el CSV de campo. En el CSV
+`campo_24_parcelas.csv` preparado previamente, `FCC_pct` y `D_medio_cm` coinciden con
+estos nombres. Ese CSV contiene altura media, no Hdom: deje altura dominante sin
+modelizar si no dispone de su valor, o seleccione conscientemente otra respuesta
+con su propio nombre. Utilice una carpeta de resultados nueva o vacía.
 
 ## Necesario
 
@@ -13,15 +51,16 @@ ajustar; utiliza los CSV de métricas ya calculados.
   no se elude ninguna protección corporativa.
 - CSV UTF-8 LiDAR: `parcela_id` y métricas numéricas `cm_Elev ...`.
 - CSV UTF-8 de campo: un ID único por parcela, volumen m³/ha, área basal m²/ha,
-  pies/ha y altura dominante en metros. Nombres predeterminados:
-  `parcela_id,V_ha,G_ha,N_ha,Hdom`; se pueden seleccionar otras columnas.
+  pies/ha, altura dominante en metros, FCC (%) y diámetro medio (cm), según las
+  respuestas que se deseen ajustar. Nombres predeterminados:
+  `parcela_id,V_ha,G_ha,N_ha,Hdom,FCC_pct,D_medio_cm`; se pueden seleccionar otras columnas.
 - Mínimo operativo en la interfaz: 8 parcelas válidas por respuesta. No garantiza suficiencia.
   Fechas, soporte espacial, filtros y normalización deben ser compatibles.
 - Carpeta de salida nueva o vacía y permisos de escritura. Admite espacios.
 
 ## Instalación y uso, sin consola
 
-1. Descargue `modelizacion_forestal_lidar-0.3.0-experimental.zip` de `dist`.
+1. Descargue `modelizacion_forestal_lidar-0.3.1-experimental.zip` de `dist`.
    No use el ZIP de todo el repositorio y no descomprima el ZIP instalable.
 2. QGIS → Complementos → Administrar e instalar complementos → Instalar a partir
    de ZIP → seleccione el archivo → Instalar complemento.
@@ -30,7 +69,7 @@ ajustar; utiliza los CSV de métricas ya calculados.
    seleccione su campo ID y el CSV de salida. Ejecute. Rellene en Excel y guarde
    como CSV UTF-8, conservando el ID como texto. No sustituya Hdom por un percentil.
 5. Elija «Ajustar y validar modelos». Seleccione CSV LiDAR y campo; compruebe los
-   IDs, las cuatro columnas de respuesta y los separadores decimales. El separador
+   IDs, las columnas de respuesta seleccionadas y los separadores decimales. El separador
    de columnas coma/punto y coma/tabulador se detecta automáticamente.
 6. Seleccione grupo/monte si corresponde. Cada grupo se mantiene entero en CV
    externa e interna. Con muy pocos grupos no se puede validar.

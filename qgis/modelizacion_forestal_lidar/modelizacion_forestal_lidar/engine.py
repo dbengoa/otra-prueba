@@ -20,12 +20,13 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-VERSION = '0.3.0-experimental'
+VERSION = '0.3.1-experimental'
 LOGGER = logging.getLogger('modelizacion_forestal_lidar.engine')
 LOGGER.setLevel(logging.INFO)
 LOGGER.propagate = False
 CHECK_CANCEL = lambda: None
 TARGETS = ['V_ha', 'G_ha', 'N_ha', 'Hdom']
+TEMPLATE_TARGETS = [*TARGETS, 'FCC_pct', 'D_medio_cm']
 DEFAULT_PATTERN = r'^(cm_Elev |cm_Canopy relief ratio$|cm_Profile area$|densidad_retornos_m2$)'
 MISSING = {'', 'nan', 'na', 'n/a', 'null', 'none', 'undefined'}
 
@@ -648,7 +649,7 @@ def main(argv=None):
                 raise ValueError('La plantilla ya existe; no se sobrescribe')
             path.parent.mkdir(parents=True, exist_ok=True)
             result = pd.DataFrame({'parcela_id': identifiers})
-            for target in TARGETS:
+            for target in TEMPLATE_TARGETS:
                 result[target] = ''
             write_csv(result, path); print('Plantilla creada: '+str(path.resolve()))
     except (ValueError, OSError, KeyError, pd.errors.ParserError, ImportError) as error:

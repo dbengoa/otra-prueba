@@ -1,3 +1,16 @@
+# Actualización QGIS 0.3.1: respuestas adicionales
+
+La interfaz admite además FCC_pct (%) y D_medio_cm (cm), después de Hdom.
+Las seis respuestas son opcionales individualmente; se exige al menos una y
+columnas distintas del ID. La plantilla incluye ambas nuevas columnas. El motor
+ajusta cada respuesta con la misma selección y validación; no cambian las ecuaciones
+estadísticas ni se impone un indicador de cobertura como predictor obligatorio.
+La FCC de campo no se confunde con cobertura de primeros retornos LiDAR. No hay
+conversión de unidades ni limitación automática de predicciones a [0,100].
+El CLI conserva sus cuatro objetivos predeterminados por compatibilidad; los nuevos
+se solicitan mediante --objetivos. El resto del texto documenta la metodología
+original para cuatro respuestas, aplicable también por separado a las nuevas.
+
 # Nota para QGIS 0.3.0
 
 El complemento exige inicialmente dos métricas. README.md describe las reglas
